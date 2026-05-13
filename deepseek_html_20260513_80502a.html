@@ -1,0 +1,1757 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Windows 11</title>
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:"Segoe UI Variable","Segoe UI",system-ui,sans-serif;overflow:hidden;height:100vh;width:100vw;user-select:none}
+:root{--accent:#60cdff;--accent-dark:#0067c0;--win-radius:12px}
+
+/* ===== BOOT SCREEN ===== */
+#boot-screen{position:fixed;inset:0;background:#000;z-index:999999;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:80px;transition:opacity .9s ease}
+#boot-screen.hide{opacity:0;pointer-events:none}
+.boot-dots{display:flex;gap:10px}
+.boot-dot{width:8px;height:8px;border-radius:50%;background:#fff;opacity:0;animation:bdot 1.6s ease-in-out infinite}
+.boot-dot:nth-child(1){animation-delay:0s}.boot-dot:nth-child(2){animation-delay:.25s}
+.boot-dot:nth-child(3){animation-delay:.5s}.boot-dot:nth-child(4){animation-delay:.75s}.boot-dot:nth-child(5){animation-delay:1s}
+@keyframes bdot{0%,100%{opacity:.15;transform:scale(.75)}45%{opacity:1;transform:scale(1.15)}}
+
+/* ===== SLEEP SCREEN ===== */
+#sleep-screen{position:fixed;inset:0;background:#000;z-index:999997;display:none;align-items:center;justify-content:center;flex-direction:column;gap:0;cursor:none}
+#sleep-screen.show{display:flex}
+#sleep-hint{position:absolute;bottom:60px;left:50%;transform:translateX(-50%);font-size:13px;color:rgba(255,255,255,.25);letter-spacing:1px;animation:sleep-hint-fade 2s ease-in-out infinite}
+@keyframes sleep-hint-fade{0%,100%{opacity:0}50%{opacity:1}}
+
+/* ===== LOCK SCREEN ===== */
+#lock-screen{position:fixed;inset:0;z-index:999996;display:none;flex-direction:column;align-items:center;justify-content:flex-start;padding-top:80px;gap:0}
+#lock-screen.show{display:flex}
+#lock-bg{position:absolute;inset:0;filter:blur(20px) brightness(.6);background-size:cover;background-position:center}
+#lock-content{position:relative;z-index:1;display:flex;flex-direction:column;align-items:center;gap:0}
+#lock-time{font-size:84px;font-weight:200;color:#fff;letter-spacing:-2px;line-height:1;font-family:"Segoe UI Variable","Segoe UI",sans-serif}
+#lock-date{font-size:22px;font-weight:300;color:rgba(255,255,255,.9);margin-top:8px;letter-spacing:.5px}
+#lock-unlock{margin-top:80px;display:flex;flex-direction:column;align-items:center;gap:16px;cursor:pointer}
+#lock-avatar{width:72px;height:72px;border-radius:50%;background:linear-gradient(135deg,#60cdff,#0067c0);display:flex;align-items:center;justify-content:center;border:2px solid rgba(255,255,255,.3);font-size:30px}
+#lock-user{font-size:16px;color:#fff;font-weight:500}
+#lock-pin{display:flex;align-items:center;gap:8px;margin-top:4px}
+#lock-pin input{background:rgba(255,255,255,.12);border:1px solid rgba(255,255,255,.3);border-radius:6px;padding:8px 16px;color:#fff;font-size:15px;outline:none;width:200px;text-align:center;backdrop-filter:blur(10px)}
+#lock-pin input:focus{border-color:#60cdff}
+#lock-pin button{padding:8px 16px;background:rgba(255,255,255,.15);border:1px solid rgba(255,255,255,.2);border-radius:6px;color:#fff;cursor:pointer;font-size:13px;backdrop-filter:blur(10px);transition:background .15s}
+#lock-pin button:hover{background:rgba(255,255,255,.25)}
+#lock-hint-text{font-size:12px;color:rgba(255,255,255,.4);margin-top:8px}
+
+/* ===== SHUTDOWN/RESTART OVERLAY ===== */
+#overlay-screen{position:fixed;inset:0;background:#000;z-index:999998;display:none;flex-direction:column;align-items:center;justify-content:center;gap:40px;color:#fff}
+#overlay-screen.show{display:flex}
+#overlay-msg{font-size:22px;font-weight:300;letter-spacing:1px}
+
+/* ===== POWER MENU ===== */
+#power-menu-popup{position:fixed;bottom:110px;right:20px;z-index:9850;background:rgba(28,28,28,.97);backdrop-filter:blur(60px);border:1px solid rgba(255,255,255,.12);border-radius:10px;padding:6px;box-shadow:0 16px 48px rgba(0,0,0,.7);min-width:176px;display:none;animation:pmIn .18s ease}
+#power-menu-popup.show{display:block}
+@keyframes pmIn{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:translateY(0)}}
+.pm-item{display:flex;align-items:center;gap:12px;padding:10px 14px;border-radius:7px;cursor:pointer;font-size:13px;color:#fff;transition:background .12s}
+.pm-item:hover{background:rgba(255,255,255,.1)}
+.pm-item svg{width:18px;height:18px;flex-shrink:0}
+
+/* ===== DESKTOP ===== */
+#desktop{width:100vw;height:100vh;position:relative;overflow:hidden;transition:background .5s ease}
+#desktop-icons{position:absolute;top:16px;left:16px;display:flex;flex-direction:column;gap:4px}
+.desk-icon{display:flex;flex-direction:column;align-items:center;gap:4px;padding:8px 6px;border-radius:6px;cursor:pointer;width:80px;transition:background .15s}
+.desk-icon:hover{background:rgba(255,255,255,.12)}
+.desk-icon img{width:40px;height:40px;object-fit:contain}
+.desk-icon span{font-size:11px;color:#fff;text-align:center;text-shadow:0 1px 3px rgba(0,0,0,.8);line-height:1.3}
+
+/* ===== DESKTOP WIDGETS ===== */
+.dw{position:absolute;border-radius:20px;background:rgba(255,255,255,.07);backdrop-filter:blur(50px) saturate(180%);border:1px solid rgba(255,255,255,.12);box-shadow:0 8px 40px rgba(0,0,0,.4);color:#fff;overflow:hidden;animation:dw-in .3s cubic-bezier(.25,.46,.45,.94);min-width:200px;z-index:200}
+@keyframes dw-in{from{opacity:0;transform:scale(.92) translateY(8px)}to{opacity:1;transform:scale(1) translateY(0)}}
+.dw-drag{cursor:move;padding:6px 12px 2px;display:flex;justify-content:space-between;align-items:center;opacity:0;transition:opacity .2s;font-size:10px;color:rgba(255,255,255,.4);text-transform:uppercase;letter-spacing:.5px}
+.dw:hover .dw-drag{opacity:1}
+.dw-close-btn{width:16px;height:16px;border-radius:50%;background:rgba(255,255,255,.12);display:flex;align-items:center;justify-content:center;cursor:pointer;font-size:9px;line-height:1;transition:background .12s;color:rgba(255,255,255,.7);flex-shrink:0}
+.dw-close-btn:hover{background:#c42b1c;color:#fff}
+
+/* Clock widget */
+.dw-clock{width:240px}
+.dw-clock-body{padding:12px 20px 18px;display:flex;flex-direction:column;align-items:center;gap:4px}
+.dw-clock-digital{font-size:54px;font-weight:200;letter-spacing:-2px;color:#fff;line-height:1;font-variant-numeric:tabular-nums}
+.dw-clock-ampm{font-size:14px;color:rgba(255,255,255,.6);margin-top:-4px;font-weight:300;letter-spacing:2px;text-transform:uppercase;align-self:flex-start;margin-left:4px}
+.dw-clock-date{font-size:13px;color:rgba(255,255,255,.7);font-weight:300;letter-spacing:.3px;text-align:center;margin-top:2px}
+.dw-clock-canvas{margin-top:8px}
+
+/* Image widget */
+.dw-image{min-width:0;background:rgba(0,0,0,.3)}
+.dw-image img{display:block;max-width:300px;max-height:300px;min-width:120px;min-height:80px;object-fit:cover;width:100%;border-radius:0 0 20px 20px}
+.dw-image-label{padding:4px 10px 6px;font-size:11px;color:rgba(255,255,255,.5);text-align:center;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+
+/* Weather widget */
+.dw-weather{width:220px}
+.dw-weather-body{padding:14px 18px 18px;display:flex;flex-direction:column;gap:6px}
+.dw-weather-main{display:flex;align-items:center;justify-content:space-between}
+.dw-weather-temp{font-size:40px;font-weight:200;color:#fff}
+.dw-weather-icon{font-size:36px}
+.dw-weather-desc{font-size:12px;color:rgba(255,255,255,.65);font-weight:300}
+.dw-weather-loc{font-size:11px;color:rgba(255,255,255,.45);display:flex;align-items:center;gap:4px}
+
+/* Notes widget */
+.dw-notes{width:220px}
+.dw-notes-body{padding:10px 14px 14px;display:flex;flex-direction:column;gap:6px}
+.dw-notes textarea{background:transparent;border:none;outline:none;color:#fff;font-size:13px;font-family:inherit;resize:none;width:100%;line-height:1.6;min-height:80px;placeholder-color:rgba(255,255,255,.3)}
+.dw-notes textarea::placeholder{color:rgba(255,255,255,.25)}
+.dw-notes-label{font-size:11px;color:rgba(255,255,255,.35);font-weight:600;letter-spacing:.5px;text-transform:uppercase}
+
+/* ===== WALLPAPER PANEL ===== */
+#wallpaper-panel{position:fixed;right:0;top:0;bottom:48px;width:340px;background:rgba(30,30,30,.97);backdrop-filter:blur(60px);border-left:1px solid rgba(255,255,255,.1);z-index:8700;transform:translateX(100%);transition:transform .3s cubic-bezier(.25,.46,.45,.94);box-shadow:-12px 0 48px rgba(0,0,0,.5);display:flex;flex-direction:column}
+#wallpaper-panel.open{transform:translateX(0)}
+.wp-header{padding:20px 20px 12px;border-bottom:1px solid rgba(255,255,255,.08);display:flex;align-items:center;justify-content:space-between}
+.wp-header h2{font-size:15px;font-weight:600;color:#fff}
+.wp-close{width:32px;height:32px;border-radius:6px;display:flex;align-items:center;justify-content:center;cursor:pointer;color:rgba(255,255,255,.6);font-size:18px;transition:background .12s}
+.wp-close:hover{background:rgba(255,255,255,.1);color:#fff}
+.wp-body{flex:1;overflow-y:auto;padding:16px}
+.wp-section{margin-bottom:20px}
+.wp-section-title{font-size:11px;color:rgba(255,255,255,.45);text-transform:uppercase;letter-spacing:.8px;font-weight:600;margin-bottom:10px}
+.wp-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.wp-thumb{border-radius:10px;overflow:hidden;cursor:pointer;aspect-ratio:16/10;border:2px solid transparent;transition:all .15s;position:relative}
+.wp-thumb:hover{transform:scale(1.03)}
+.wp-thumb.active{border-color:#60cdff;box-shadow:0 0 0 1px #60cdff}
+.wp-thumb-inner{width:100%;height:100%}
+.wp-thumb-name{position:absolute;bottom:0;left:0;right:0;padding:4px 6px;font-size:10px;color:#fff;background:linear-gradient(transparent,rgba(0,0,0,.7));text-align:center}
+.wp-upload-btn{width:100%;padding:10px;border:1px dashed rgba(255,255,255,.2);border-radius:10px;background:rgba(255,255,255,.04);color:rgba(255,255,255,.7);font-size:13px;cursor:pointer;text-align:center;transition:all .15s;display:flex;align-items:center;justify-content:center;gap:8px}
+.wp-upload-btn:hover{background:rgba(255,255,255,.08);border-color:rgba(255,255,255,.35);color:#fff}
+.wp-colors{display:grid;grid-template-columns:repeat(7,1fr);gap:6px;margin-top:4px}
+.wp-color-swatch{aspect-ratio:1;border-radius:6px;cursor:pointer;border:2px solid transparent;transition:all .15s}
+.wp-color-swatch:hover{transform:scale(1.1)}
+.wp-color-swatch.active{border-color:#60cdff}
+
+/* ===== CURSOR PANEL ===== */
+#cursor-panel{position:fixed;right:0;top:0;bottom:48px;width:280px;background:rgba(30,30,30,.97);backdrop-filter:blur(60px);border-left:1px solid rgba(255,255,255,.1);z-index:8700;transform:translateX(100%);transition:transform .3s cubic-bezier(.25,.46,.45,.94);box-shadow:-12px 0 48px rgba(0,0,0,.5)}
+#cursor-panel.open{transform:translateX(0)}
+.cp-header{padding:20px 20px 12px;border-bottom:1px solid rgba(255,255,255,.08);display:flex;align-items:center;justify-content:space-between}
+.cp-header h2{font-size:15px;font-weight:600;color:#fff}
+.cp-body{padding:16px}
+.cursor-option{display:flex;align-items:center;gap:14px;padding:12px;border-radius:8px;cursor:pointer;transition:background .12s;border:1px solid transparent}
+.cursor-option:hover{background:rgba(255,255,255,.07)}
+.cursor-option.active{background:rgba(96,205,255,.1);border-color:rgba(96,205,255,.3)}
+.cursor-preview{width:36px;height:36px;display:flex;align-items:center;justify-content:center;font-size:22px;flex-shrink:0}
+.cursor-info{flex:1}
+.cursor-info h4{font-size:13px;color:#fff;font-weight:500;margin-bottom:2px}
+.cursor-info p{font-size:11px;color:rgba(255,255,255,.45)}
+.cursor-option.active .cursor-info h4{color:#60cdff}
+
+/* ===== WIDGET PANEL ===== */
+#widget-panel{position:fixed;right:0;top:0;bottom:48px;width:300px;background:rgba(30,30,30,.97);backdrop-filter:blur(60px);border-left:1px solid rgba(255,255,255,.1);z-index:8700;transform:translateX(100%);transition:transform .3s cubic-bezier(.25,.46,.45,.94);box-shadow:-12px 0 48px rgba(0,0,0,.5);display:flex;flex-direction:column}
+#widget-panel.open{transform:translateX(0)}
+.wdgt-header{padding:20px 20px 12px;border-bottom:1px solid rgba(255,255,255,.08);display:flex;align-items:center;justify-content:space-between}
+.wdgt-header h2{font-size:15px;font-weight:600;color:#fff}
+.wdgt-body{flex:1;overflow-y:auto;padding:16px}
+.wdgt-card{border:1px solid rgba(255,255,255,.1);border-radius:12px;padding:14px;cursor:pointer;transition:all .15s;margin-bottom:10px;background:rgba(255,255,255,.03);display:flex;align-items:center;gap:12px}
+.wdgt-card:hover{background:rgba(255,255,255,.08);border-color:rgba(255,255,255,.2);transform:translateX(-2px)}
+.wdgt-card-icon{width:40px;height:40px;border-radius:10px;display:flex;align-items:center;justify-content:center;font-size:22px;flex-shrink:0}
+.wdgt-card-info h4{font-size:13px;color:#fff;font-weight:500;margin-bottom:2px}
+.wdgt-card-info p{font-size:11px;color:rgba(255,255,255,.45)}
+
+/* ===== TASKBAR ===== */
+#taskbar{position:fixed;bottom:0;left:0;right:0;height:48px;background:rgba(28,28,28,.88);backdrop-filter:blur(30px) saturate(180%);border-top:1px solid rgba(255,255,255,.07);display:flex;align-items:center;justify-content:space-between;z-index:9000;padding:0 12px}
+#taskbar-center{position:absolute;left:50%;transform:translateX(-50%);display:flex;align-items:center;gap:2px}
+.tb-btn{width:40px;height:40px;border-radius:5px;display:flex;align-items:center;justify-content:center;cursor:pointer;position:relative;transition:background .15s}
+.tb-btn:hover{background:rgba(255,255,255,.1)}
+.tb-btn.tb-active::after{content:'';position:absolute;bottom:3px;left:50%;transform:translateX(-50%);width:14px;height:3px;background:var(--accent);border-radius:2px}
+.tb-btn img{width:22px;height:22px;object-fit:contain}
+.tb-btn.minimized-hint::before{content:'';position:absolute;bottom:3px;left:50%;transform:translateX(-50%);width:8px;height:3px;background:rgba(255,255,255,.4);border-radius:2px}
+#tray{display:flex;align-items:center;gap:2px}
+.tray-btn{padding:4px 8px;border-radius:5px;cursor:pointer;display:flex;align-items:center;gap:6px;transition:background .15s}
+.tray-btn:hover{background:rgba(255,255,255,.1)}
+#clock-display{font-size:11.5px;color:#fff;line-height:1.5;text-align:right}
+
+/* ===== START MENU ===== */
+#start-menu{position:fixed;bottom:56px;left:50%;transform:translateX(-50%) translateY(8px) scale(.97);width:640px;border-radius:var(--win-radius);z-index:8900;opacity:0;pointer-events:none;transition:all .22s cubic-bezier(.25,.46,.45,.94);box-shadow:0 32px 80px rgba(0,0,0,.7),0 0 0 1px rgba(255,255,255,.09)}
+#start-menu.open{opacity:1;pointer-events:all;transform:translateX(-50%) translateY(0) scale(1)}
+#start-inner{background:rgba(30,30,30,.96);backdrop-filter:blur(80px) saturate(200%);border:1px solid rgba(255,255,255,.1);border-radius:var(--win-radius);padding:28px 28px 20px;color:#fff}
+#start-search{width:100%;background:rgba(255,255,255,.08);border:1px solid rgba(255,255,255,.15);border-radius:20px;padding:8px 16px;color:#fff;font-size:13px;outline:none}
+#start-search::placeholder{color:rgba(255,255,255,.45)}
+#start-search:focus{background:rgba(255,255,255,.12);border-color:var(--accent)}
+.start-section-title{font-size:12px;color:rgba(255,255,255,.55);margin:16px 0 10px;font-weight:500}
+#pinned-grid{display:grid;grid-template-columns:repeat(6,1fr);gap:4px}
+.pin-app{display:flex;flex-direction:column;align-items:center;gap:6px;padding:10px 8px;border-radius:6px;cursor:pointer;transition:background .15s}
+.pin-app:hover{background:rgba(255,255,255,.1)}
+.pin-app img{width:32px;height:32px;object-fit:contain}
+.pin-app span{font-size:11px;color:rgba(255,255,255,.9);text-align:center}
+
+/* ===== WINDOWS ===== */
+.win{position:fixed;display:flex;flex-direction:column;border-radius:var(--win-radius);overflow:hidden;box-shadow:0 20px 60px rgba(0,0,0,.55),0 0 0 1px rgba(255,255,255,.09);min-width:320px;min-height:220px;transition:box-shadow .2s;animation:win-open .2s ease}
+.win.focused{box-shadow:0 24px 70px rgba(0,0,0,.65),0 0 0 1px rgba(255,255,255,.13)}
+.win.minimized{display:none}
+@keyframes win-open{from{opacity:0;transform:scale(.94)}to{opacity:1;transform:scale(1)}}
+.win-bar{height:36px;display:flex;align-items:center;cursor:move;flex-shrink:0}
+.win-icon{width:16px;height:16px;margin-left:12px;object-fit:contain}
+.win-title-text{font-size:12.5px;font-weight:400;flex:1;margin-left:8px;overflow:hidden;white-space:nowrap;text-overflow:ellipsis}
+.win-btns{display:flex;margin-left:auto}
+.wbtn{width:46px;height:36px;display:flex;align-items:center;justify-content:center;cursor:pointer;font-size:10px;transition:background .12s}
+.wbtn:hover{background:rgba(255,255,255,.12)}
+.wbtn.cls:hover{background:#c42b1c}
+.wbtn:last-child{border-radius:0 var(--win-radius) 0 0}
+.win-body{flex:1;overflow:hidden;position:relative}
+.win-light .win-bar{background:rgba(243,243,243,.93);backdrop-filter:blur(60px);border-bottom:1px solid rgba(0,0,0,.06);color:#111}
+.win-light .wbtn{color:#111}
+.win-light .wbtn:hover{background:rgba(0,0,0,.07)}
+.win-light .wbtn.cls:hover{background:#c42b1c;color:#fff}
+.win-dark .win-bar{background:rgba(32,32,32,.95);backdrop-filter:blur(60px);border-bottom:1px solid rgba(255,255,255,.06);color:#fff}
+.win-dark .wbtn{color:#fff}
+
+/* ===== FILE EXPLORER ===== */
+.fe-wrap{display:flex;height:100%;background:rgba(243,243,243,.97)}
+.fe-sidebar{width:200px;border-right:1px solid rgba(0,0,0,.08);padding:8px 4px;background:rgba(235,235,235,.95);overflow-y:auto}
+.fe-sitem{display:flex;align-items:center;gap:8px;padding:5px 10px;border-radius:5px;cursor:pointer;font-size:12.5px;color:#222;transition:background .12s}
+.fe-sitem:hover{background:rgba(0,0,0,.06)}
+.fe-sitem img{width:16px;height:16px}
+.fe-main{flex:1;display:flex;flex-direction:column;overflow:hidden}
+.fe-toolbar{padding:6px 12px;border-bottom:1px solid rgba(0,0,0,.07);display:flex;align-items:center;gap:6px;background:rgba(248,248,248,.9)}
+.fe-tb-btn{padding:4px 10px;border-radius:4px;font-size:12px;color:#111;cursor:pointer;display:flex;align-items:center;gap:4px;border:none;background:transparent;transition:background .12s}
+.fe-tb-btn:hover{background:rgba(0,0,0,.08)}
+.fe-addr{flex:1;background:rgba(255,255,255,.8);border:1px solid rgba(0,0,0,.15);border-radius:4px;padding:3px 10px;font-size:12px;color:#111;outline:none}
+.fe-files{flex:1;padding:12px;display:grid;grid-template-columns:repeat(auto-fill,minmax(90px,1fr));gap:8px;overflow-y:auto;align-content:start}
+.fe-file{display:flex;flex-direction:column;align-items:center;gap:4px;padding:8px 6px;border-radius:6px;cursor:pointer;transition:background .12s}
+.fe-file:hover{background:rgba(0,120,212,.1)}
+.fe-file img{width:40px;height:40px}
+.fe-file span{font-size:11px;color:#111;text-align:center;line-height:1.3}
+
+/* ===== NOTEPAD ===== */
+.np-wrap{display:flex;flex-direction:column;height:100%;background:#fff}
+.np-menu{display:flex;border-bottom:1px solid rgba(0,0,0,.08);background:#f3f3f3;padding:2px 4px}
+.np-menu-btn{padding:4px 10px;font-size:12.5px;color:#111;cursor:pointer;border-radius:3px;position:relative;border:none;background:transparent}
+.np-menu-btn:hover{background:rgba(0,0,0,.06)}
+.np-dropdown{position:absolute;top:100%;left:0;background:#fff;border:1px solid rgba(0,0,0,.12);border-radius:5px;box-shadow:0 4px 16px rgba(0,0,0,.15);z-index:100;min-width:160px;padding:4px;display:none}
+.np-dropdown.open{display:block}
+.np-ditem{padding:6px 12px;font-size:12.5px;color:#111;cursor:pointer;border-radius:3px;transition:background .1s}
+.np-ditem:hover{background:rgba(0,0,0,.06)}
+.np-textarea{flex:1;border:none;outline:none;padding:12px 16px;font-size:13.5px;font-family:inherit;resize:none;color:#111;line-height:1.6}
+.np-status{padding:3px 12px;font-size:11.5px;color:#666;background:#f3f3f3;border-top:1px solid rgba(0,0,0,.07)}
+
+/* ===== BROWSER ===== */
+.br-wrap{display:flex;flex-direction:column;height:100%;background:#f3f3f3}
+.br-bar{display:flex;align-items:center;gap:6px;padding:6px 10px;background:#f3f3f3;border-bottom:1px solid rgba(0,0,0,.08)}
+.br-nav-btn{width:30px;height:30px;border-radius:4px;display:flex;align-items:center;justify-content:center;cursor:pointer;font-size:12px;color:#111;transition:background .12s;border:none;background:transparent}
+.br-nav-btn:hover{background:rgba(0,0,0,.08)}
+.br-url{flex:1;background:#fff;border:1px solid rgba(0,0,0,.2);border-radius:20px;padding:5px 14px;font-size:12.5px;outline:none;color:#111}
+.br-url:focus{border-color:#0067c0;box-shadow:0 0 0 2px rgba(0,103,192,.2)}
+.br-iframe{flex:1;border:none;width:100%;height:100%;background:#fff}
+.br-blocked{position:absolute;inset:0;background:#f3f3f3;display:none;flex-direction:column;align-items:center;justify-content:center;gap:14px}
+.br-blocked.show{display:flex}
+.br-loading{position:absolute;inset:0;background:#fff;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:14px}
+.br-loading-spinner{width:32px;height:32px;border:3px solid rgba(0,103,192,.2);border-top-color:#0067c0;border-radius:50%;animation:brspin .8s linear infinite}
+@keyframes brspin{to{transform:rotate(360deg)}}
+
+/* ===== CMD ===== */
+.cmd-wrap{height:100%;background:#0c0c0c;color:#cccccc;display:flex;flex-direction:column;padding:8px;font-family:"Cascadia Code","Consolas","Courier New",monospace;font-size:13px}
+.cmd-out{flex:1;overflow-y:auto;white-space:pre-wrap;line-height:1.5}
+.cmd-line{display:flex;align-items:center;gap:4px;margin-top:4px}
+.cmd-prompt{color:#cccccc;white-space:nowrap}
+.cmd-input{flex:1;background:transparent;border:none;outline:none;color:#cccccc;font-family:inherit;font-size:inherit;caret-color:#fff}
+
+/* ===== PAINT ===== */
+.pt-wrap{display:flex;flex-direction:column;height:100%;background:#e8e8e8}
+.pt-toolbar{padding:6px 10px;background:#f3f3f3;border-bottom:1px solid rgba(0,0,0,.1);display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+.pt-tool-btn{padding:4px 10px;border:1px solid transparent;border-radius:4px;cursor:pointer;font-size:12px;color:#111;background:transparent;transition:all .12s}
+.pt-tool-btn:hover{background:rgba(0,0,0,.08)}
+.pt-tool-btn.active{background:rgba(0,120,212,.15);border-color:rgba(0,120,212,.5)}
+.pt-colors{display:flex;gap:3px;align-items:center}
+.pt-color{width:22px;height:22px;border-radius:3px;cursor:pointer;border:2px solid transparent;transition:border-color .12s}
+.pt-color.selected{border-color:#0067c0}
+.pt-color:hover{transform:scale(1.1)}
+.pt-canvas-wrap{flex:1;overflow:auto;display:flex;padding:12px;background:#e8e8e8}
+#paint-canvas{cursor:crosshair;box-shadow:0 2px 8px rgba(0,0,0,.2)}
+
+/* ===== STORE ===== */
+.ms-wrap{display:flex;height:100%;background:#fff}
+.ms-sidebar{width:200px;background:#f3f3f3;border-right:1px solid rgba(0,0,0,.08);padding:12px 8px}
+.ms-sitem{display:flex;align-items:center;gap:10px;padding:8px 10px;border-radius:5px;cursor:pointer;font-size:13px;color:#111;transition:background .12s}
+.ms-sitem:hover{background:rgba(0,0,0,.07)}
+.ms-sitem.ms-active{background:rgba(0,120,212,.12);color:#0067c0}
+.ms-sitem img{width:18px;height:18px}
+.ms-main{flex:1;overflow-y:auto;padding:20px}
+.ms-hero{height:220px;border-radius:10px;background:linear-gradient(135deg,#0067c0,#60cdff);display:flex;align-items:flex-end;padding:20px;color:#fff;margin-bottom:24px;position:relative;overflow:hidden}
+.ms-apps-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(160px,1fr));gap:12px}
+.ms-app-card{border:1px solid rgba(0,0,0,.1);border-radius:8px;overflow:hidden;cursor:pointer;transition:box-shadow .15s}
+.ms-app-card:hover{box-shadow:0 4px 16px rgba(0,0,0,.12)}
+.ms-card-img{height:100px;display:flex;align-items:center;justify-content:center;font-size:40px}
+.ms-card-info{padding:8px;background:#fff}
+.ms-card-info h4{font-size:12.5px;font-weight:500;color:#111;margin-bottom:2px}
+.ms-stars{color:#f8a800;font-size:11px}
+
+/* ===== SPOTIFY ===== */
+.sp-wrap{display:flex;flex-direction:column;height:100%;background:#121212;color:#fff}
+.sp-top{display:flex;flex:1;overflow:hidden}
+.sp-sidebar{width:240px;background:#000;padding:12px;overflow-y:auto;flex-shrink:0}
+.sp-logo{display:flex;align-items:center;gap:8px;padding:8px;margin-bottom:16px}
+.sp-nav-item{display:flex;align-items:center;gap:12px;padding:8px;border-radius:5px;cursor:pointer;font-size:13.5px;color:#b3b3b3;font-weight:500;transition:all .12s}
+.sp-nav-item:hover{color:#fff}
+.sp-nav-item.sp-active{color:#fff}
+.sp-nav-item svg{width:20px;height:20px}
+.sp-main{flex:1;overflow-y:auto;padding:24px;background:linear-gradient(180deg,#2d2d2d 0%,#121212 35%)}
+.sp-section-title{font-size:20px;font-weight:700;margin-bottom:16px}
+.sp-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:16px;margin-bottom:24px}
+.sp-card{background:#181818;border-radius:8px;padding:14px;cursor:pointer;transition:background .15s}
+.sp-card:hover{background:#282828}
+.sp-card-img{width:100%;aspect-ratio:1;border-radius:5px;margin-bottom:12px}
+.sp-card h4{font-size:13px;font-weight:600;margin-bottom:4px;overflow:hidden;white-space:nowrap;text-overflow:ellipsis}
+.sp-card p{font-size:12px;color:#b3b3b3;overflow:hidden;white-space:nowrap;text-overflow:ellipsis}
+.sp-player{height:76px;background:#181818;border-top:1px solid rgba(255,255,255,.1);display:flex;align-items:center;padding:0 16px;gap:16px}
+.sp-player-left{display:flex;align-items:center;gap:10px;width:220px;min-width:180px}
+.sp-thumb{width:48px;height:48px;border-radius:4px;background:linear-gradient(135deg,#1DB954,#191414)}
+.sp-player-center{flex:1;display:flex;flex-direction:column;align-items:center;gap:6px}
+.sp-controls{display:flex;align-items:center;gap:16px}
+.sp-ctrl-btn{background:none;border:none;color:#b3b3b3;cursor:pointer;width:28px;height:28px;display:flex;align-items:center;justify-content:center;border-radius:50%;transition:color .12s}
+.sp-ctrl-btn:hover{color:#fff}
+.sp-play-btn{background:#fff;color:#121212!important;width:32px;height:32px}
+.sp-play-btn:hover{background:#e0e0e0;transform:scale(1.04)}
+.sp-progress{width:100%;max-width:400px;height:4px;background:#4a4a4a;border-radius:2px;cursor:pointer}
+.sp-progress-fill{height:100%;background:#b3b3b3;border-radius:2px;width:35%}
+.sp-vol{display:flex;align-items:center;gap:8px;width:120px;justify-content:flex-end}
+
+/* ===== RECYCLE BIN ===== */
+.rb-wrap{display:flex;flex-direction:column;height:100%;background:#f3f3f3}
+.rb-toolbar{padding:8px 12px;border-bottom:1px solid rgba(0,0,0,.08);display:flex;align-items:center;gap:8px;background:#f8f8f8}
+.rb-tool-btn{padding:5px 14px;border:1px solid rgba(0,0,0,.15);border-radius:4px;font-size:12px;cursor:pointer;background:#fff;color:#111;transition:all .12s;display:flex;align-items:center;gap:6px}
+.rb-tool-btn:hover{background:#e5e5e5}
+.rb-header{display:grid;grid-template-columns:2fr 1fr 1fr 1fr;padding:6px 16px;border-bottom:1px solid rgba(0,0,0,.08);font-size:12px;color:#666;font-weight:500}
+.rb-row{display:grid;grid-template-columns:2fr 1fr 1fr 1fr;padding:8px 16px;font-size:12.5px;color:#111;border-bottom:1px solid rgba(0,0,0,.04);cursor:pointer;align-items:center;transition:background .1s}
+.rb-row:hover{background:rgba(0,0,0,.04)}
+.rb-row.rb-selected{background:rgba(0,120,212,.1)}
+.rb-empty{display:flex;flex-direction:column;align-items:center;justify-content:center;height:100%;gap:12px;color:#888}
+
+/* ===== CONTEXT MENU ===== */
+#ctx-menu{position:fixed;background:rgba(45,45,45,.97);backdrop-filter:blur(30px);border:1px solid rgba(255,255,255,.12);border-radius:8px;padding:4px;z-index:99000;box-shadow:0 8px 32px rgba(0,0,0,.5);min-width:220px;display:none}
+#ctx-menu.open{display:block}
+.ctx-item{padding:7px 14px;font-size:12.5px;color:#fff;cursor:pointer;border-radius:5px;transition:background .1s;display:flex;align-items:center;gap:10px}
+.ctx-item:hover{background:rgba(255,255,255,.12)}
+.ctx-sep{height:1px;background:rgba(255,255,255,.1);margin:4px 6px}
+.ctx-item svg{width:14px;height:14px;flex-shrink:0;opacity:.8}
+
+/* ===== NOTIFICATIONS ===== */
+#notif-area{position:fixed;bottom:60px;right:12px;display:flex;flex-direction:column;gap:8px;z-index:9500}
+.notif{background:rgba(36,36,36,.95);backdrop-filter:blur(30px);border:1px solid rgba(255,255,255,.1);border-radius:10px;padding:14px 16px;color:#fff;width:300px;font-size:13px;box-shadow:0 8px 24px rgba(0,0,0,.4);animation:notif-in .3s ease;display:flex;align-items:flex-start;gap:10px;transition:opacity .5s}
+@keyframes notif-in{from{opacity:0;transform:translateX(20px)}to{opacity:1;transform:translateX(0)}}
+.notif img{width:24px;height:24px;flex-shrink:0}
+
+/* ===== CALENDAR ===== */
+#cal-panel{position:fixed;bottom:56px;right:12px;width:320px;background:rgba(30,30,30,.95);backdrop-filter:blur(60px);border:1px solid rgba(255,255,255,.1);border-radius:12px;padding:20px;color:#fff;z-index:8800;display:none;box-shadow:0 16px 48px rgba(0,0,0,.6)}
+#cal-panel.open{display:block}
+
+/* ===== GAME LAUNCH ===== */
+#game-launch-screen{position:fixed;inset:0;z-index:999990;display:none;flex-direction:column;align-items:center;justify-content:center;gap:28px}
+#game-launch-screen.show{display:flex}
+
+/* ===== MISC ===== */
+::-webkit-scrollbar{width:6px;height:6px}
+::-webkit-scrollbar-track{background:transparent}
+::-webkit-scrollbar-thumb{background:rgba(0,0,0,.2);border-radius:3px}
+::-webkit-scrollbar-thumb:hover{background:rgba(0,0,0,.3)}
+.sp-toast{position:fixed;bottom:90px;left:50%;transform:translateX(-50%);background:#1DB954;color:#fff;padding:8px 20px;border-radius:20px;font-size:13px;font-weight:600;z-index:99999;animation:toast-anim .3s ease;pointer-events:none}
+@keyframes toast-anim{from{opacity:0;transform:translateX(-50%) translateY(10px)}to{opacity:1;transform:translateX(-50%) translateY(0)}}
+</style>
+</head>
+<body>
+
+<!-- BOOT SCREEN -->
+<div id="boot-screen">
+  <svg width="72" height="72" viewBox="0 0 88 88" xmlns="http://www.w3.org/2000/svg">
+    <rect x="0" y="0" width="40" height="40" fill="white"/>
+    <rect x="48" y="0" width="40" height="40" fill="white"/>
+    <rect x="0" y="48" width="40" height="40" fill="white"/>
+    <rect x="48" y="48" width="40" height="40" fill="white"/>
+  </svg>
+  <div class="boot-dots">
+    <div class="boot-dot"></div><div class="boot-dot"></div><div class="boot-dot"></div>
+    <div class="boot-dot"></div><div class="boot-dot"></div>
+  </div>
+</div>
+
+<!-- SLEEP SCREEN -->
+<div id="sleep-screen">
+  <div id="sleep-hint">Press any key or click to wake</div>
+</div>
+
+<!-- LOCK SCREEN -->
+<div id="lock-screen">
+  <div id="lock-bg"></div>
+  <div id="lock-content">
+    <div id="lock-time">12:00</div>
+    <div id="lock-date">Wednesday, May 13</div>
+    <div id="lock-unlock">
+      <div id="lock-avatar">👤</div>
+      <div id="lock-user">User</div>
+      <div id="lock-pin">
+        <input type="password" placeholder="PIN" onkeydown="lockKeydown(event)" maxlength="6"/>
+        <button onclick="unlockPC()">→</button>
+      </div>
+      <div id="lock-hint-text">Enter any PIN or press Enter</div>
+    </div>
+  </div>
+</div>
+
+<!-- SHUTDOWN / RESTART OVERLAY -->
+<div id="overlay-screen">
+  <svg width="48" height="48" viewBox="0 0 88 88" xmlns="http://www.w3.org/2000/svg" style="opacity:.6">
+    <rect x="0" y="0" width="40" height="40" fill="white"/>
+    <rect x="48" y="0" width="40" height="40" fill="white"/>
+    <rect x="0" y="48" width="40" height="40" fill="white"/>
+    <rect x="48" y="48" width="40" height="40" fill="white"/>
+  </svg>
+  <div id="overlay-msg">Shutting down...</div>
+</div>
+
+<!-- POWER MENU -->
+<div id="power-menu-popup">
+  <div class="pm-item" onclick="doSleep()">
+    <svg viewBox="0 0 24 24" fill="currentColor"><path d="M17.75 4.09l-2.53 1.94.91 3.06-2.63-1.81-2.63 1.81.91-3.06-2.53-1.94 3.17-.09L12 1l1.38 3.01 3.17.08zm3.5 6.91l-1.64 1.25.59 1.98-1.7-1.17-1.7 1.17.59-1.98L15.75 11l2.06-.05L18.5 9l.69 1.95 2.06.05zm-2.28 4.95c.83-.08 1.72 1.1 1.19 1.85-.32.45-.66.87-1.08 1.27C15.17 23 8.84 23 4.94 19.07c-3.91-3.9-3.91-10.24 0-14.14.4-.4.82-.76 1.27-1.08.75-.53 1.93.36 1.85 1.19-.27 2.86.69 5.83 2.89 8.02a9.96 9.96 0 008.02 2.89z"/></svg>
+    Sleep
+  </div>
+  <div class="pm-item" onclick="doShutdown()">
+    <svg viewBox="0 0 24 24" fill="currentColor"><path d="M13 3h-2v10h2V3zm4.83 2.17l-1.42 1.42A6.92 6.92 0 0119 12c0 3.87-3.13 7-7 7A7 7 0 015 12c0-2.28 1.09-4.3 2.79-5.61L6.37 5c-2.11 1.65-3.37 4.2-3.37 7 0 5.52 4.48 10 10 10 5.53 0 10-4.48 10-10 0-2.8-1.25-5.35-3.17-7.17z"/></svg>
+    Shut down
+  </div>
+  <div class="pm-item" onclick="doRestart()">
+    <svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 5V1L7 6l5 5V7c3.31 0 6 2.69 6 6s-2.69 6-6 6-6-2.69-6-6H4c0 4.42 3.58 8 8 8s8-3.58 8-8-3.58-8-8-8z"/></svg>
+    Restart
+  </div>
+</div>
+
+<!-- GAME LAUNCH SCREEN -->
+<div id="game-launch-screen">
+  <img id="gl-img" src="" style="width:80px;height:80px;object-fit:contain;" alt=""/>
+  <div id="gl-title" style="font-size:22px;font-weight:600;color:#fff;"></div>
+  <div style="display:flex;gap:10px;">
+    <div style="width:10px;height:10px;border-radius:50%;background:#fff;animation:bdot 1.6s ease-in-out infinite;animation-delay:0s"></div>
+    <div style="width:10px;height:10px;border-radius:50%;background:#fff;animation:bdot 1.6s ease-in-out infinite;animation-delay:.25s"></div>
+    <div style="width:10px;height:10px;border-radius:50%;background:#fff;animation:bdot 1.6s ease-in-out infinite;animation-delay:.5s"></div>
+  </div>
+  <div id="gl-sub" style="font-size:13px;color:rgba(255,255,255,.5);margin-top:8px;"></div>
+</div>
+
+<!-- WALLPAPER PANEL -->
+<div id="wallpaper-panel">
+  <div class="wp-header">
+    <h2>🖼 Personalize Background</h2>
+    <div class="wp-close" onclick="closeAllPanels()">✕</div>
+  </div>
+  <div class="wp-body">
+    <div class="wp-section">
+      <div class="wp-section-title">Windows 11 Wallpapers</div>
+      <div class="wp-grid" id="wp-grid"></div>
+    </div>
+    <div class="wp-section">
+      <div class="wp-section-title">Solid Colors</div>
+      <div class="wp-colors" id="wp-colors"></div>
+    </div>
+    <div class="wp-section">
+      <div class="wp-section-title">Custom Image</div>
+      <label class="wp-upload-btn">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><path d="M9 16h6v-6h4l-7-7-7 7h4zm-4 2h14v2H5z"/></svg>
+        Upload from PC
+        <input type="file" accept="image/*" style="display:none" onchange="setCustomWallpaper(event)"/>
+      </label>
+    </div>
+  </div>
+</div>
+
+<!-- CURSOR PANEL -->
+<div id="cursor-panel">
+  <div class="cp-header">
+    <h2>🖱 Cursor Style</h2>
+    <div class="wp-close" onclick="closeAllPanels()">✕</div>
+  </div>
+  <div class="cp-body" id="cursor-options"></div>
+</div>
+
+<!-- WIDGET PANEL -->
+<div id="widget-panel">
+  <div class="wdgt-header">
+    <h2>⊞ Add Widget</h2>
+    <div class="wp-close" onclick="closeAllPanels()">✕</div>
+  </div>
+  <div class="wdgt-body">
+    <div class="wdgt-card" onclick="addWidget('clock');closeAllPanels()">
+      <div class="wdgt-card-icon" style="background:linear-gradient(135deg,#0067c0,#60cdff)">🕐</div>
+      <div class="wdgt-card-info"><h4>Clock</h4><p>Analog & digital time</p></div>
+    </div>
+    <div class="wdgt-card" onclick="addWidget('weather');closeAllPanels()">
+      <div class="wdgt-card-icon" style="background:linear-gradient(135deg,#1a6b8a,#60cdff)">⛅</div>
+      <div class="wdgt-card-info"><h4>Weather</h4><p>Current conditions</p></div>
+    </div>
+    <div class="wdgt-card" onclick="addWidget('notes');closeAllPanels()">
+      <div class="wdgt-card-icon" style="background:linear-gradient(135deg,#f8a800,#ffd700)">📝</div>
+      <div class="wdgt-card-info"><h4>Sticky Notes</h4><p>Quick notes on desktop</p></div>
+    </div>
+    <div class="wdgt-card" onclick="document.getElementById('img-widget-upload').click();closeAllPanels()">
+      <div class="wdgt-card-icon" style="background:linear-gradient(135deg,#4a1d96,#7c3aed)">🖼</div>
+      <div class="wdgt-card-info"><h4>Image from PC</h4><p>Display your photo</p></div>
+    </div>
+    <input id="img-widget-upload" type="file" accept="image/*" style="display:none" onchange="addImageWidget(event)"/>
+  </div>
+</div>
+
+<!-- DESKTOP -->
+<div id="desktop">
+  <!-- Default Windows 11 Bloom wallpaper via CSS (set in JS) -->
+
+  <div id="desktop-icons">
+    <div class="desk-icon" ondblclick="openApp('explorer')">
+      <img src="https://img.icons8.com/fluency/96/folder-invoices.png" alt=""/>
+      <span>File Explorer</span>
+    </div>
+    <div class="desk-icon" ondblclick="openApp('notepad')">
+      <img src="https://img.icons8.com/fluency/96/notepad.png" alt=""/>
+      <span>Notepad</span>
+    </div>
+    <div class="desk-icon" ondblclick="openApp('recycle')">
+      <img src="https://img.icons8.com/fluency/96/full-trash.png" alt=""/>
+      <span>Recycle Bin</span>
+    </div>
+    <div class="desk-icon" ondblclick="openApp('browser')">
+      <img src="https://img.icons8.com/fluency/96/ms-edge-new.png" alt=""/>
+      <span>Microsoft Edge</span>
+    </div>
+    <div class="desk-icon" ondblclick="openApp('roblox')">
+      <img src="https://img.icons8.com/color/96/roblox.png" style="border-radius:12px;" alt=""/>
+      <span>Roblox</span>
+    </div>
+    <div class="desk-icon" ondblclick="openApp('minecraft')">
+      <img src="https://img.icons8.com/color/96/minecraft-logo.png" style="border-radius:6px;" alt=""/>
+      <span>Minecraft</span>
+    </div>
+  </div>
+
+  <!-- Desktop widgets container -->
+  <div id="desktop-widgets"></div>
+
+  <div id="windows-container"></div>
+
+  <!-- TASKBAR -->
+  <div id="taskbar">
+    <div style="width:80px;"></div>
+    <div id="taskbar-center">
+      <div class="tb-btn" id="start-btn" onclick="toggleStartMenu()" title="Start">
+        <svg width="18" height="18" viewBox="0 0 88 88" fill="none">
+          <rect x="0" y="0" width="40" height="40" rx="4" fill="#F25022"/>
+          <rect x="48" y="0" width="40" height="40" rx="4" fill="#7FBA00"/>
+          <rect x="0" y="48" width="40" height="40" rx="4" fill="#00A4EF"/>
+          <rect x="48" y="48" width="40" height="40" rx="4" fill="#FFB900"/>
+        </svg>
+      </div>
+      <div class="tb-btn" onclick="focusStartSearch()" title="Search">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="rgba(255,255,255,0.9)"><path d="M15.5 14h-.79l-.28-.27C15.41 12.59 16 11.11 16 9.5 16 5.91 13.09 3 9.5 3S3 5.91 3 9.5 5.91 16 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19l-4.99-5zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14z"/></svg>
+      </div>
+      <div class="tb-btn" title="Task View">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="rgba(255,255,255,0.9)"><path d="M2 4h8v6H2zm0 8h8v8H2zm10-8h10v10H12zm0 12h10v4H12z"/></svg>
+      </div>
+      <div class="tb-btn" id="tb-widgets-btn" onclick="openWidgetPanel()" title="Widgets">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="rgba(255,255,255,0.9)"><path d="M3 13h8V3H3v10zm0 8h8v-6H3v6zm10 0h8V11h-8v10zm0-18v6h8V3h-8z"/></svg>
+      </div>
+      <div class="tb-btn" id="tb-explorer" onclick="openApp('explorer')" title="File Explorer">
+        <img src="https://img.icons8.com/fluency/48/folder-invoices.png" alt="Explorer"/>
+      </div>
+      <div class="tb-btn" id="tb-browser" onclick="openApp('browser')" title="Microsoft Edge">
+        <img src="https://img.icons8.com/fluency/48/ms-edge-new.png" alt="Edge"/>
+      </div>
+      <div class="tb-btn" id="tb-store" onclick="openApp('store')" title="Microsoft Store">
+        <img src="https://img.icons8.com/fluency/48/microsoft-store.png" alt="Store"/>
+      </div>
+      <div class="tb-btn" id="tb-spotify" onclick="openApp('spotify')" title="Spotify">
+        <img src="https://img.icons8.com/fluency/48/spotify.png" alt="Spotify"/>
+      </div>
+      <div class="tb-btn" id="tb-notepad" onclick="openApp('notepad')" title="Notepad">
+        <img src="https://img.icons8.com/fluency/48/notepad.png" alt="Notepad"/>
+      </div>
+      <div class="tb-btn" id="tb-paint" onclick="openApp('paint')" title="Paint">
+        <img src="https://img.icons8.com/fluency/48/paint-palette.png" alt="Paint"/>
+      </div>
+      <div class="tb-btn" id="tb-cmd" onclick="openApp('cmd')" title="Command Prompt">
+        <svg width="22" height="22" viewBox="0 0 24 24"><rect width="24" height="24" rx="4" fill="#0c0c0c"/><path d="M4 7l5 5-5 5" stroke="#cccccc" stroke-width="1.5" fill="none" stroke-linecap="round" stroke-linejoin="round"/><path d="M11 17h9" stroke="#cccccc" stroke-width="1.5" stroke-linecap="round"/></svg>
+      </div>
+      <div class="tb-btn" id="tb-roblox" onclick="openApp('roblox')" title="Roblox">
+        <img src="https://img.icons8.com/color/48/roblox.png" style="border-radius:6px;" alt="Roblox"/>
+      </div>
+      <div class="tb-btn" id="tb-minecraft" onclick="openApp('minecraft')" title="Minecraft">
+        <img src="https://img.icons8.com/color/48/minecraft-logo.png" alt="Minecraft"/>
+      </div>
+    </div>
+    <div id="tray">
+      <!-- System tray icons -->
+      <div class="tray-btn" title="Network · Connected">
+        <svg width="15" height="15" viewBox="0 0 24 24" fill="white"><path d="M1 9l2 2c4.97-4.97 13.03-4.97 18 0l2-2C16.93 2.93 7.08 2.93 1 9zm8 8l3 3 3-3c-1.65-1.66-4.34-1.66-6 0zm-4-4l2 2c2.76-2.76 7.24-2.76 10 0l2-2C15.14 9.14 8.87 9.14 5 13z"/></svg>
+      </div>
+      <div class="tray-btn" title="Volume">
+        <svg width="15" height="15" viewBox="0 0 24 24" fill="white"><path d="M3 9v6h4l5 5V4L7 9H3zm13.5 3c0-1.8-1-3.3-2.5-4v8c1.5-.7 2.5-2.2 2.5-4z"/></svg>
+      </div>
+      <div class="tray-btn" title="Battery 100%">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="white"><rect x="2" y="7" width="18" height="10" rx="2" stroke="white" stroke-width="1.5" fill="none"/><rect x="20" y="10" width="2" height="4" rx="1" fill="white"/><rect x="3.5" y="8.5" width="15" height="7" rx="1" fill="white" opacity=".9"/></svg>
+      </div>
+      <div class="tray-btn" onclick="toggleCalendar()" title="Show calendar">
+        <div id="clock-display">
+          <span id="clock-time" style="font-size:12px;color:#fff;font-weight:400;display:block;text-align:right;"></span>
+          <span id="clock-date" style="font-size:11px;color:rgba(255,255,255,.8);display:block;text-align:right;"></span>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- START MENU -->
+<div id="start-menu">
+  <div id="start-inner">
+    <input type="text" id="start-search" placeholder="🔍  Search for apps, settings, and documents" oninput="filterApps(this.value)"/>
+    <p class="start-section-title">Pinned</p>
+    <div id="pinned-grid">
+      <div class="pin-app" onclick="openApp('explorer');closeStartMenu()"><img src="https://img.icons8.com/fluency/64/folder-invoices.png"/><span>File Explorer</span></div>
+      <div class="pin-app" onclick="openApp('notepad');closeStartMenu()"><img src="https://img.icons8.com/fluency/64/notepad.png"/><span>Notepad</span></div>
+      <div class="pin-app" onclick="openApp('browser');closeStartMenu()"><img src="https://img.icons8.com/fluency/64/ms-edge-new.png"/><span>Edge</span></div>
+      <div class="pin-app" onclick="openApp('cmd');closeStartMenu()"><img src="https://img.icons8.com/fluency/64/console.png"/><span>Terminal</span></div>
+      <div class="pin-app" onclick="openApp('paint');closeStartMenu()"><img src="https://img.icons8.com/fluency/64/paint-palette.png"/><span>Paint</span></div>
+      <div class="pin-app" onclick="openApp('store');closeStartMenu()"><img src="https://img.icons8.com/fluency/64/microsoft-store.png"/><span>Store</span></div>
+      <div class="pin-app" onclick="openApp('spotify');closeStartMenu()"><img src="https://img.icons8.com/fluency/64/spotify.png"/><span>Spotify</span></div>
+      <div class="pin-app" onclick="openApp('recycle');closeStartMenu()"><img src="https://img.icons8.com/fluency/64/full-trash.png"/><span>Recycle Bin</span></div>
+      <div class="pin-app" onclick="openApp('roblox');closeStartMenu()"><img src="https://img.icons8.com/color/64/roblox.png" style="border-radius:10px;"/><span>Roblox</span></div>
+      <div class="pin-app" onclick="openApp('minecraft');closeStartMenu()"><img src="https://img.icons8.com/color/64/minecraft-logo.png" style="border-radius:6px;"/><span>Minecraft</span></div>
+      <div class="pin-app" onclick="showNotif('Settings','Opening Windows Settings...','https://img.icons8.com/fluency/64/settings.png')"><img src="https://img.icons8.com/fluency/64/settings.png"/><span>Settings</span></div>
+      <div class="pin-app" onclick="showNotif('Calculator','Launching Calculator...','https://img.icons8.com/fluency/64/calculator.png')"><img src="https://img.icons8.com/fluency/64/calculator.png"/><span>Calculator</span></div>
+    </div>
+    <p class="start-section-title">Recommended</p>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:4px;">
+      <div style="display:flex;align-items:center;gap:10px;padding:8px;border-radius:5px;cursor:pointer;background:rgba(255,255,255,.05);" onmouseenter="this.style.background='rgba(255,255,255,.1)'" onmouseleave="this.style.background='rgba(255,255,255,.05)'">
+        <img src="https://img.icons8.com/fluency/32/document.png" style="width:28px;height:28px;" alt=""/>
+        <div><div style="font-size:12px;color:#fff;">Notes.txt</div><div style="font-size:11px;color:rgba(255,255,255,.5);">Recently edited</div></div>
+      </div>
+      <div style="display:flex;align-items:center;gap:10px;padding:8px;border-radius:5px;cursor:pointer;background:rgba(255,255,255,.05);" onmouseenter="this.style.background='rgba(255,255,255,.1)'" onmouseleave="this.style.background='rgba(255,255,255,.05)'">
+        <img src="https://img.icons8.com/fluency/32/folder-invoices.png" style="width:28px;height:28px;" alt=""/>
+        <div><div style="font-size:12px;color:#fff;">Documents</div><div style="font-size:11px;color:rgba(255,255,255,.5);">Recently opened</div></div>
+      </div>
+    </div>
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-top:20px;padding-top:12px;border-top:1px solid rgba(255,255,255,.08);">
+      <div style="display:flex;align-items:center;gap:8px;cursor:pointer;padding:6px 8px;border-radius:5px;" onmouseenter="this.style.background='rgba(255,255,255,.08)'" onmouseleave="this.style.background='transparent'">
+        <img src="https://img.icons8.com/fluency/32/user-male-circle.png" style="width:26px;height:26px;" alt=""/>
+        <span style="font-size:13px;color:#fff;font-weight:500;">User</span>
+      </div>
+      <div style="display:flex;gap:4px;">
+        <div style="padding:6px 12px;border-radius:5px;font-size:12px;color:rgba(255,255,255,.8);cursor:pointer;display:flex;align-items:center;gap:6px;" onclick="showPowerMenu(event)" onmouseenter="this.style.background='rgba(255,255,255,.08)'" onmouseleave="this.style.background='transparent'">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor"><path d="M13 3h-2v10h2V3zm4.83 2.17l-1.42 1.42A6.92 6.92 0 0119 12c0 3.87-3.13 7-7 7A7 7 0 015 12c0-2.28 1.09-4.3 2.79-5.61L6.37 5c-2.11 1.65-3.37 4.2-3.37 7 0 5.52 4.48 10 10 10 5.53 0 10-4.48 10-10 0-2.8-1.25-5.35-3.17-7.17z"/></svg>
+          Power
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- CONTEXT MENU -->
+<div id="ctx-menu">
+  <div class="ctx-item" onclick="showNotif('View','Changing desktop view...','https://img.icons8.com/fluency/32/gallery.png')">
+    <svg viewBox="0 0 24 24" fill="currentColor"><path d="M3 3h4v4H3V3zm0 7h4v4H3v-4zm0 7h4v4H3v-4zm7-14h4v4h-4V3zm0 7h4v4h-4v-4zm0 7h4v4h-4v-4zm7-14h4v4h-4V3zm0 7h4v4h-4v-4zm0 7h4v4h-4v-4z"/></svg>
+    View
+  </div>
+  <div class="ctx-item" onclick="showNotif('Refresh','Refreshing desktop...','https://img.icons8.com/fluency/32/available-updates.png')">
+    <svg viewBox="0 0 24 24" fill="currentColor"><path d="M17.65 6.35A7.958 7.958 0 0012 4c-4.42 0-7.99 3.58-7.99 8s3.57 8 7.99 8c3.73 0 6.84-2.55 7.73-6h-2.08A5.99 5.99 0 0112 18c-3.31 0-6-2.69-6-6s2.69-6 6-6c1.66 0 3.14.69 4.22 1.78L13 11h7V4l-2.35 2.35z"/></svg>
+    Refresh
+  </div>
+  <div class="ctx-sep"></div>
+  <div class="ctx-item" onclick="closeCtxMenu();openApp('notepad')">
+    <svg viewBox="0 0 24 24" fill="currentColor"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8l-6-6zm4 18H6V4h7v5h5v11z"/></svg>
+    New &rsaquo; Text Document
+  </div>
+  <div class="ctx-sep"></div>
+  <div class="ctx-item" onclick="closeCtxMenu();openWallpaperPanel()">
+    <svg viewBox="0 0 24 24" fill="currentColor"><path d="M21 3H3C2 3 1 4 1 5v14c0 1.1.9 2 2 2h18c1.1 0 2-.9 2-2V5c0-1-1-2-2-2zm0 16H3V5h18v14zm-1-12l-4 4-2-2-6 8h16l-4-10z"/></svg>
+    Personalize
+  </div>
+  <div class="ctx-item" onclick="closeCtxMenu();openWidgetPanel()">
+    <svg viewBox="0 0 24 24" fill="currentColor"><path d="M3 13h8V3H3v10zm0 8h8v-6H3v6zm10 0h8V11h-8v10zm0-18v6h8V3h-8z"/></svg>
+    Add Widget
+  </div>
+  <div class="ctx-item" onclick="closeCtxMenu();openCursorPanel()">
+    <svg viewBox="0 0 24 24" fill="currentColor"><path d="M4 0l16 12.279-6.951 1.017 4.734 5.702-1.558 1.298-4.778-5.753-3.447 4.454V0z"/></svg>
+    Mouse Pointer
+  </div>
+  <div class="ctx-sep"></div>
+  <div class="ctx-item" onclick="showNotif('Settings','Opening Display Settings...','https://img.icons8.com/fluency/32/settings.png')">
+    <svg viewBox="0 0 24 24" fill="currentColor"><path d="M19.14 12.94c.04-.3.06-.61.06-.94 0-.32-.02-.64-.07-.94l2.03-1.58c.18-.14.23-.41.12-.61l-1.92-3.32c-.12-.22-.37-.29-.59-.22l-2.39.96c-.5-.38-1.03-.7-1.62-.94l-.36-2.54c-.04-.24-.24-.41-.48-.41h-3.84c-.24 0-.43.17-.47.41l-.36 2.54c-.59.24-1.13.57-1.62.94l-2.39-.96c-.22-.08-.47 0-.59.22L2.74 8.87c-.12.21-.08.47.12.61l2.03 1.58c-.05.3-.09.63-.09.94s.02.64.07.94l-2.03 1.58c-.18.14-.23.41-.12.61l1.92 3.32c.12.22.37.29.59.22l2.39-.96c.5.38 1.03.7 1.62.94l.36 2.54c.05.24.24.41.48.41h3.84c.24 0 .44-.17.47-.41l.36-2.54c.59-.24 1.13-.56 1.62-.94l2.39.96c.22.08.47 0 .59-.22l1.92-3.32c.12-.22.07-.47-.12-.61l-2.01-1.58zM12 15.6c-1.98 0-3.6-1.62-3.6-3.6s1.62-3.6 3.6-3.6 3.6 1.62 3.6 3.6-1.62 3.6-3.6 3.6z"/></svg>
+    Display settings
+  </div>
+</div>
+
+<div id="notif-area"></div>
+<div id="cal-panel"><div id="cal-content"></div></div>
+
+<script>
+(function(){
+'use strict';
+
+/* ============================================================
+   WALLPAPERS
+============================================================ */
+var WALLPAPERS = [
+  { id:'bloom', name:'Bloom',
+    css:'radial-gradient(ellipse 95% 75% at 64% 60%, rgba(0,130,255,.75) 0%, rgba(0,60,190,.45) 28%, transparent 60%), radial-gradient(ellipse 75% 95% at 56% 64%, rgba(130,0,255,.5) 0%, rgba(85,0,185,.3) 32%, transparent 60%), radial-gradient(ellipse 55% 55% at 61% 56%, rgba(0,210,255,.65) 0%, transparent 42%), radial-gradient(ellipse 45% 45% at 56% 53%, rgba(0,190,255,.45) 0%, transparent 38%), radial-gradient(ellipse 65% 85% at 72% 72%, rgba(85,0,205,.38) 0%, transparent 52%), radial-gradient(ellipse 35% 55% at 50% 50%, rgba(0,160,255,.3) 0%, transparent 35%), linear-gradient(150deg,#02081a 0%,#030e2c 30%,#05091e 65%,#020818 100%)' },
+  { id:'glow', name:'Glow',
+    css:'radial-gradient(ellipse 100% 70% at 50% 50%, rgba(100,0,220,.6) 0%, transparent 55%), radial-gradient(ellipse 70% 100% at 50% 50%, rgba(0,200,200,.4) 0%, transparent 55%), radial-gradient(ellipse 60% 60% at 30% 70%, rgba(0,100,255,.5) 0%, transparent 45%), linear-gradient(135deg,#040216 0%,#0a0530 50%,#030d1a 100%)' },
+  { id:'flow', name:'Flow',
+    css:'radial-gradient(ellipse 120% 60% at 50% 100%, rgba(0,80,200,.8) 0%, transparent 50%), radial-gradient(ellipse 80% 80% at 80% 20%, rgba(0,160,255,.5) 0%, transparent 50%), radial-gradient(ellipse 60% 40% at 20% 60%, rgba(0,50,180,.6) 0%, transparent 45%), linear-gradient(180deg,#01060f 0%,#030c24 40%,#050a1e 100%)' },
+  { id:'sunrise', name:'Sunrise',
+    css:'radial-gradient(ellipse 100% 60% at 50% 100%, rgba(255,140,0,.7) 0%, rgba(255,60,0,.4) 30%, transparent 60%), radial-gradient(ellipse 80% 80% at 70% 30%, rgba(255,200,50,.4) 0%, transparent 50%), radial-gradient(ellipse 60% 40% at 20% 70%, rgba(200,50,0,.4) 0%, transparent 45%), linear-gradient(180deg,#0a0204 0%,#200510 40%,#3a0d00 100%)' },
+  { id:'neon', name:'Neon',
+    css:'radial-gradient(ellipse 50% 50% at 80% 20%, rgba(0,255,200,.5) 0%, transparent 45%), radial-gradient(ellipse 40% 60% at 20% 80%, rgba(200,0,255,.5) 0%, transparent 45%), radial-gradient(ellipse 80% 30% at 50% 50%, rgba(0,200,255,.15) 0%, transparent 60%), linear-gradient(135deg,#010306 0%,#04091a 50%,#020309 100%)' },
+  { id:'forest', name:'Forest',
+    css:'radial-gradient(ellipse 80% 80% at 50% 80%, rgba(0,100,40,.8) 0%, transparent 55%), radial-gradient(ellipse 60% 60% at 80% 20%, rgba(50,200,80,.35) 0%, transparent 50%), radial-gradient(ellipse 40% 40% at 20% 40%, rgba(0,80,30,.6) 0%, transparent 45%), linear-gradient(160deg,#010a03 0%,#031408 35%,#020c05 100%)' },
+  { id:'aurora', name:'Aurora',
+    css:'radial-gradient(ellipse 100% 50% at 50% 80%, rgba(0,255,150,.4) 0%, transparent 50%), radial-gradient(ellipse 80% 80% at 80% 20%, rgba(100,0,255,.45) 0%, transparent 50%), radial-gradient(ellipse 60% 60% at 20% 50%, rgba(0,200,255,.35) 0%, transparent 50%), radial-gradient(ellipse 40% 80% at 50% 40%, rgba(0,150,100,.25) 0%, transparent 50%), linear-gradient(180deg,#010208 0%,#03060f 50%,#020408 100%)' },
+  { id:'win10', name:'Mountains',
+    css:'radial-gradient(ellipse 120% 60% at 50% 100%, rgba(30,100,200,.7) 0%, transparent 55%), radial-gradient(ellipse 60% 60% at 50% 40%, rgba(100,180,255,.25) 0%, transparent 50%), linear-gradient(180deg,#0c1a36 0%,#1a3054 40%,#0c1828 100%)' }
+];
+
+var SOLID_COLORS = ['#1a1a2e','#0f3460','#16213e','#1b1b2f','#2d1b69','#0d1117','#1c1c1c','#14213d','#1a0a2e','#0a1628','#001233','#0d0221'];
+
+var currentWallpaper = 'bloom';
+
+function applyWallpaper(wallpaper) {
+  var desk = document.getElementById('desktop');
+  if (typeof wallpaper === 'string' && wallpaper.startsWith('#')) {
+    desk.style.background = wallpaper;
+    desk.style.backgroundImage = '';
+  } else if (typeof wallpaper === 'string' && wallpaper.startsWith('url(')) {
+    desk.style.background = wallpaper + ' center/cover no-repeat';
+  } else {
+    var wp = WALLPAPERS.find(function(w) { return w.id === wallpaper; });
+    if (wp) desk.style.background = wp.css;
+  }
+  currentWallpaper = wallpaper;
+}
+
+function buildWallpaperPanel() {
+  // Thumbnails
+  var grid = document.getElementById('wp-grid');
+  grid.innerHTML = WALLPAPERS.map(function(wp) {
+    return '<div class="wp-thumb'+(wp.id===currentWallpaper?' active':'')+'" id="wpthumb-'+wp.id+'" onclick="selectWallpaper(\''+wp.id+'\')" title="'+wp.name+'">' +
+      '<div class="wp-thumb-inner" style="background:'+wp.css+'"></div>' +
+      '<div class="wp-thumb-name">'+wp.name+'</div>' +
+    '</div>';
+  }).join('');
+  // Solid colors
+  var colors = document.getElementById('wp-colors');
+  colors.innerHTML = SOLID_COLORS.map(function(c) {
+    return '<div class="wp-color-swatch" style="background:'+c+'" onclick="selectWallpaper(\''+c+'\')" title="'+c+'"></div>';
+  }).join('');
+}
+
+window.selectWallpaper = function(id) {
+  applyWallpaper(id);
+  document.querySelectorAll('.wp-thumb').forEach(function(el) { el.classList.remove('active'); });
+  document.querySelectorAll('.wp-color-swatch').forEach(function(el) { el.classList.remove('active'); });
+  var thumb = document.getElementById('wpthumb-' + id);
+  if (thumb) thumb.classList.add('active');
+};
+
+window.setCustomWallpaper = function(e) {
+  var file = e.target.files[0]; if (!file) return;
+  var reader = new FileReader();
+  reader.onload = function(ev) {
+    applyWallpaper('url(' + ev.target.result + ')');
+    showNotif('Personalize', 'Wallpaper updated!', 'https://img.icons8.com/fluency/32/image.png');
+  };
+  reader.readAsDataURL(file);
+};
+
+/* ============================================================
+   CURSOR SYSTEM
+============================================================ */
+var CURSORS = [
+  { id:'default', name:'Default', desc:'Windows 11 default arrow', emoji:'↖', css:'default' },
+  { id:'pointer', name:'Hand Pointer', desc:'Link selection style', emoji:'☝', css:'pointer' },
+  { id:'crosshair', name:'Crosshair', desc:'Precision crosshair', emoji:'✛', css:'crosshair' },
+  { id:'cell', name:'Cell', desc:'Cell selection cross', emoji:'⊞', css:'cell' },
+  { id:'move', name:'Move', desc:'Four-way move arrow', emoji:'✥', css:'move' },
+  { id:'text', name:'Text', desc:'Text insert beam', emoji:'I', css:'text' },
+  { id:'wait', name:'Loading', desc:'Busy/wait spinner', emoji:'⏳', css:'wait' },
+  { id:'zoom-in', name:'Zoom In', desc:'Magnify cursor', emoji:'🔍', css:'zoom-in' }
+];
+var currentCursor = 'default';
+
+function buildCursorPanel() {
+  var el = document.getElementById('cursor-options');
+  el.innerHTML = CURSORS.map(function(c) {
+    return '<div class="cursor-option'+(c.id===currentCursor?' active':'')+'" onclick="setCursor(\''+c.id+'\')" id="copt-'+c.id+'">' +
+      '<div class="cursor-preview" style="cursor:'+c.css+';font-family:monospace;font-weight:700;">'+c.emoji+'</div>' +
+      '<div class="cursor-info"><h4>'+c.name+'</h4><p>'+c.desc+'</p></div>' +
+    '</div>';
+  }).join('');
+}
+
+window.setCursor = function(id) {
+  var c = CURSORS.find(function(x) { return x.id === id; });
+  if (!c) return;
+  document.body.style.cursor = c.css;
+  currentCursor = id;
+  document.querySelectorAll('.cursor-option').forEach(function(el) { el.classList.remove('active'); });
+  var opt = document.getElementById('copt-' + id);
+  if (opt) opt.classList.add('active');
+};
+
+/* ============================================================
+   DESKTOP WIDGETS
+============================================================ */
+var widgetCounter = 0;
+
+function makeWidgetDraggable(el, dragHandle) {
+  var dragging = false, ox = 0, oy = 0;
+  var handle = dragHandle || el;
+  handle.addEventListener('mousedown', function(e) {
+    if (e.target.closest('.dw-close-btn')) return;
+    dragging = true;
+    ox = e.clientX - el.offsetLeft;
+    oy = e.clientY - el.offsetTop;
+    el.style.zIndex = 500;
+    e.preventDefault();
+  });
+  document.addEventListener('mousemove', function(e) {
+    if (!dragging) return;
+    var nx = e.clientX - ox, ny = e.clientY - oy;
+    nx = Math.max(0, Math.min(nx, window.innerWidth - el.offsetWidth));
+    ny = Math.max(0, Math.min(ny, window.innerHeight - 48 - el.offsetHeight));
+    el.style.left = nx + 'px';
+    el.style.top = ny + 'px';
+  });
+  document.addEventListener('mouseup', function() {
+    dragging = false;
+    el.style.zIndex = 200;
+  });
+}
+
+function removeWidget(id) {
+  var el = document.getElementById('widget-' + id);
+  if (el) el.remove();
+}
+
+window.addWidget = function(type, opts) {
+  var id = 'wdgt' + (++widgetCounter);
+  var container = document.getElementById('desktop-widgets');
+  var el = document.createElement('div');
+  el.className = 'dw';
+  el.id = 'widget-' + id;
+
+  var defaultRight = 20;
+  var defaultTop = type === 'clock' ? 60 : type === 'weather' ? 320 : type === 'notes' ? 580 : 200;
+
+  el.style.right = defaultRight + 'px';
+  el.style.top = defaultTop + 'px';
+
+  var headerHTML = '<div class="dw-drag" id="drag-'+id+'"><span>'+type.toUpperCase()+'</span><div class="dw-close-btn" onclick="removeWidget(\''+id+'\')">✕</div></div>';
+
+  if (type === 'clock') {
+    el.classList.add('dw-clock');
+    el.innerHTML = headerHTML +
+      '<div class="dw-clock-body">' +
+        '<div class="dw-clock-digital" id="dw-time-'+id+'">12:00</div>' +
+        '<div class="dw-clock-ampm" id="dw-ampm-'+id+'">AM</div>' +
+        '<div class="dw-clock-date" id="dw-date-'+id+'">Wednesday, May 13</div>' +
+        '<canvas class="dw-clock-canvas" id="dw-canvas-'+id+'" width="120" height="120"></canvas>' +
+      '</div>';
+    container.appendChild(el);
+    makeWidgetDraggable(el, document.getElementById('drag-'+id));
+    el.querySelector('.dw-clock-body').addEventListener('mousedown', function(e) {
+      if (e.target.closest('.dw-close-btn')) return;
+      var fake = { clientX: e.clientX, clientY: e.clientY, preventDefault: e.preventDefault.bind(e), target: e.target };
+      document.getElementById('drag-'+id).dispatchEvent(new MouseEvent('mousedown', { clientX: e.clientX, clientY: e.clientY, bubbles: true }));
+    });
+    updateClockWidget(id);
+    setInterval(function() { updateClockWidget(id); }, 1000);
+  } else if (type === 'weather') {
+    el.classList.add('dw-weather');
+    el.innerHTML = headerHTML +
+      '<div class="dw-weather-body">' +
+        '<div class="dw-weather-main"><div class="dw-weather-temp">18°C</div><div class="dw-weather-icon">⛅</div></div>' +
+        '<div class="dw-weather-desc">Partly Cloudy</div>' +
+        '<div class="dw-weather-loc"><svg width="12" height="12" viewBox="0 0 24 24" fill="currentColor"><path d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7zm0 9.5c-1.38 0-2.5-1.12-2.5-2.5s1.12-2.5 2.5-2.5 2.5 1.12 2.5 2.5-1.12 2.5-2.5 2.5z"/></svg> Lelystad, NL</div>' +
+        '<div style="margin-top:10px;display:flex;justify-content:space-between;font-size:11px;color:rgba(255,255,255,.5);">' +
+          '<div style="text-align:center"><div>MON</div><div style="font-size:16px;margin:3px 0;">🌤</div><div>16°</div></div>' +
+          '<div style="text-align:center"><div>TUE</div><div style="font-size:16px;margin:3px 0;">🌧</div><div>13°</div></div>' +
+          '<div style="text-align:center"><div>WED</div><div style="font-size:16px;margin:3px 0;">☀</div><div>21°</div></div>' +
+          '<div style="text-align:center"><div>THU</div><div style="font-size:16px;margin:3px 0;">⛅</div><div>19°</div></div>' +
+        '</div>' +
+      '</div>';
+    container.appendChild(el);
+    makeWidgetDraggable(el, document.getElementById('drag-'+id));
+  } else if (type === 'notes') {
+    el.classList.add('dw-notes');
+    el.innerHTML = headerHTML +
+      '<div class="dw-notes-body">' +
+        '<div class="dw-notes-label">Quick Notes</div>' +
+        '<textarea class="dw-notes-ta" placeholder="Type a note..." spellcheck="false" style="background:transparent;border:none;outline:none;color:#fff;font-size:13px;font-family:inherit;resize:none;width:100%;line-height:1.7;min-height:90px;" oninput="saveNote(\''+id+'\',this.value)" onmousedown="event.stopPropagation()"></textarea>' +
+      '</div>';
+    container.appendChild(el);
+    makeWidgetDraggable(el, document.getElementById('drag-'+id));
+  }
+
+  return el;
+};
+
+window.addImageWidget = function(e) {
+  var file = e.target.files[0]; if (!file) return;
+  var id = 'wdgt' + (++widgetCounter);
+  var container = document.getElementById('desktop-widgets');
+  var el = document.createElement('div');
+  el.className = 'dw dw-image';
+  el.id = 'widget-' + id;
+  el.style.right = '280px';
+  el.style.top = '80px';
+
+  var reader = new FileReader();
+  reader.onload = function(ev) {
+    var name = file.name.length > 20 ? file.name.slice(0,20)+'...' : file.name;
+    el.innerHTML =
+      '<div class="dw-drag" id="drag-'+id+'" style="opacity:1;"><span style="max-width:160px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">'+name+'</span><div class="dw-close-btn" onclick="removeWidget(\''+id+'\')">✕</div></div>' +
+      '<img src="'+ev.target.result+'" alt="'+name+'" style="max-width:280px;max-height:280px;min-width:120px;min-height:80px;object-fit:cover;width:100%;border-radius:0 0 20px 20px;display:block;">';
+    container.appendChild(el);
+    makeWidgetDraggable(el, document.getElementById('drag-'+id));
+  };
+  reader.readAsDataURL(file);
+  e.target.value = '';
+};
+
+window.saveNote = function(id, val) {
+  try { localStorage.setItem('widget_note_'+id, val); } catch(e) {}
+};
+
+function updateClockWidget(id) {
+  var timeEl = document.getElementById('dw-time-'+id);
+  var ampmEl = document.getElementById('dw-ampm-'+id);
+  var dateEl = document.getElementById('dw-date-'+id);
+  var canvas = document.getElementById('dw-canvas-'+id);
+  if (!timeEl) return;
+
+  var now = new Date();
+  var hours = now.getHours();
+  var minutes = now.getMinutes();
+  var ampm = hours >= 12 ? 'PM' : 'AM';
+  var h12 = hours % 12 || 12;
+  var mins = minutes.toString().padStart(2, '0');
+
+  timeEl.textContent = h12 + ':' + mins;
+  if (ampmEl) ampmEl.textContent = ampm;
+  if (dateEl) {
+    var days = ['Sunday','Monday','Tuesday','Wednesday','Thursday','Friday','Saturday'];
+    var months = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+    dateEl.textContent = days[now.getDay()]+', '+months[now.getMonth()]+' '+now.getDate();
+  }
+  if (canvas) drawAnalogClock(canvas, now);
+}
+
+function drawAnalogClock(canvas, now) {
+  var ctx = canvas.getContext('2d');
+  var w = canvas.width, h = canvas.height;
+  var cx = w/2, cy = h/2, r = Math.min(w,h)/2 - 8;
+  ctx.clearRect(0, 0, w, h);
+
+  // Face
+  ctx.beginPath();
+  ctx.arc(cx, cy, r, 0, 2*Math.PI);
+  ctx.fillStyle = 'rgba(255,255,255,0.05)';
+  ctx.fill();
+  ctx.strokeStyle = 'rgba(255,255,255,0.15)';
+  ctx.lineWidth = 1;
+  ctx.stroke();
+
+  // Hour marks
+  for (var i = 0; i < 12; i++) {
+    var a = (i*30 - 90)*Math.PI/180;
+    var isMajor = i % 3 === 0;
+    var inner = r - (isMajor ? 10 : 6);
+    var outer = r - 2;
+    ctx.beginPath();
+    ctx.moveTo(cx+Math.cos(a)*inner, cy+Math.sin(a)*inner);
+    ctx.lineTo(cx+Math.cos(a)*outer, cy+Math.sin(a)*outer);
+    ctx.strokeStyle = isMajor ? 'rgba(255,255,255,0.7)' : 'rgba(255,255,255,0.3)';
+    ctx.lineWidth = isMajor ? 2 : 1;
+    ctx.stroke();
+  }
+
+  // Hour hand
+  var hAngle = ((now.getHours()%12 + now.getMinutes()/60)*30 - 90)*Math.PI/180;
+  ctx.beginPath();
+  ctx.moveTo(cx - Math.cos(hAngle)*6, cy - Math.sin(hAngle)*6);
+  ctx.lineTo(cx + Math.cos(hAngle)*(r*0.52), cy + Math.sin(hAngle)*(r*0.52));
+  ctx.strokeStyle = '#fff';
+  ctx.lineWidth = 3;
+  ctx.lineCap = 'round';
+  ctx.stroke();
+
+  // Minute hand
+  var mAngle = ((now.getMinutes() + now.getSeconds()/60)*6 - 90)*Math.PI/180;
+  ctx.beginPath();
+  ctx.moveTo(cx - Math.cos(mAngle)*8, cy - Math.sin(mAngle)*8);
+  ctx.lineTo(cx + Math.cos(mAngle)*(r*0.74), cy + Math.sin(mAngle)*(r*0.74));
+  ctx.strokeStyle = '#fff';
+  ctx.lineWidth = 2;
+  ctx.lineCap = 'round';
+  ctx.stroke();
+
+  // Second hand
+  var sAngle = (now.getSeconds()*6 - 90)*Math.PI/180;
+  ctx.beginPath();
+  ctx.moveTo(cx - Math.cos(sAngle)*10, cy - Math.sin(sAngle)*10);
+  ctx.lineTo(cx + Math.cos(sAngle)*(r*0.82), cy + Math.sin(sAngle)*(r*0.82));
+  ctx.strokeStyle = '#60cdff';
+  ctx.lineWidth = 1.5;
+  ctx.lineCap = 'round';
+  ctx.stroke();
+
+  // Center dot
+  ctx.beginPath();
+  ctx.arc(cx, cy, 4, 0, 2*Math.PI);
+  ctx.fillStyle = '#fff';
+  ctx.fill();
+  ctx.beginPath();
+  ctx.arc(cx, cy, 2, 0, 2*Math.PI);
+  ctx.fillStyle = '#60cdff';
+  ctx.fill();
+}
+
+/* ============================================================
+   PANEL MANAGEMENT
+============================================================ */
+window.openWallpaperPanel = function() {
+  closeAllPanels();
+  buildWallpaperPanel();
+  document.getElementById('wallpaper-panel').classList.add('open');
+};
+window.openCursorPanel = function() {
+  closeAllPanels();
+  buildCursorPanel();
+  document.getElementById('cursor-panel').classList.add('open');
+};
+window.openWidgetPanel = function() {
+  closeAllPanels();
+  document.getElementById('widget-panel').classList.add('open');
+};
+window.closeAllPanels = function() {
+  document.getElementById('wallpaper-panel').classList.remove('open');
+  document.getElementById('cursor-panel').classList.remove('open');
+  document.getElementById('widget-panel').classList.remove('open');
+};
+
+/* ============================================================
+   BOOT SEQUENCE
+============================================================ */
+// Apply default wallpaper
+applyWallpaper('bloom');
+// Add default clock widget
+addWidget('clock');
+
+var boot = document.getElementById('boot-screen');
+setTimeout(function() {
+  boot.classList.add('hide');
+  setTimeout(function() { boot.style.display='none'; }, 900);
+  setTimeout(function() {
+    showNotif('Windows 11','Welcome! Double-click desktop icons or use the taskbar.','https://img.icons8.com/fluency/32/windows-11.png');
+  }, 400);
+  setTimeout(function() {
+    showNotif('Microsoft Defender','Your device is protected.','https://img.icons8.com/fluency/32/security-shield-green.png');
+  }, 2000);
+}, 3200);
+
+/* ============================================================
+   POWER FUNCTIONS (enhanced)
+============================================================ */
+var powerMenuOpen = false;
+
+window.showPowerMenu = function(e) {
+  if (e) e.stopPropagation();
+  powerMenuOpen = !powerMenuOpen;
+  document.getElementById('power-menu-popup').classList.toggle('show', powerMenuOpen);
+};
+
+function hidePowerMenu() {
+  powerMenuOpen = false;
+  document.getElementById('power-menu-popup').classList.remove('show');
+}
+
+window.doSleep = function() {
+  hidePowerMenu(); closeStartMenu(); closeAllPanels();
+  // Try fullscreen for immersion
+  try { document.documentElement.requestFullscreen().catch(function(){}); } catch(e) {}
+  var sleepEl = document.getElementById('sleep-screen');
+  sleepEl.classList.add('show');
+  var wakeHandler = function() {
+    sleepEl.classList.remove('show');
+    try { if(document.exitFullscreen) document.exitFullscreen().catch(function(){}); } catch(e) {}
+    document.removeEventListener('keydown', wakeHandler);
+    document.removeEventListener('click', wakeHandler);
+    // Show lock screen
+    showLockScreen();
+  };
+  setTimeout(function() {
+    document.addEventListener('keydown', wakeHandler);
+    document.addEventListener('click', wakeHandler);
+  }, 800);
+};
+
+function showLockScreen() {
+  var ls = document.getElementById('lock-screen');
+  // Copy current wallpaper to lock bg
+  var desk = document.getElementById('desktop');
+  var lb = document.getElementById('lock-bg');
+  lb.style.background = desk.style.background;
+  lb.style.backgroundImage = desk.style.backgroundImage;
+
+  updateLockClock();
+  ls.classList.add('show');
+  var inp = ls.querySelector('input');
+  if (inp) { inp.value=''; setTimeout(function(){inp.focus();}, 300); }
+}
+
+function updateLockClock() {
+  var now = new Date();
+  var lt = document.getElementById('lock-time');
+  var ld = document.getElementById('lock-date');
+  var h = now.getHours()%12||12;
+  var m = now.getMinutes().toString().padStart(2,'0');
+  var ampm = now.getHours()>=12?'PM':'AM';
+  if(lt) lt.textContent = h+':'+m+' '+ampm;
+  if(ld) {
+    var days=['Sunday','Monday','Tuesday','Wednesday','Thursday','Friday','Saturday'];
+    var months=['January','February','March','April','May','June','July','August','September','October','November','December'];
+    ld.textContent = days[now.getDay()]+', '+months[now.getMonth()]+' '+now.getDate();
+  }
+}
+setInterval(updateLockClock, 1000);
+
+window.unlockPC = function() {
+  var ls = document.getElementById('lock-screen');
+  ls.style.opacity='0';
+  ls.style.transition='opacity .4s';
+  setTimeout(function(){
+    ls.classList.remove('show');
+    ls.style.opacity='';ls.style.transition='';
+  }, 400);
+};
+
+window.lockKeydown = function(e) {
+  if (e.key === 'Enter') unlockPC();
+};
+
+window.doShutdown = function() {
+  hidePowerMenu(); closeStartMenu(); closeAllPanels();
+  var os = document.getElementById('overlay-screen');
+  document.getElementById('overlay-msg').textContent = 'Shutting down...';
+  os.style.background = '#000';
+  os.classList.add('show');
+  setTimeout(function() {
+    document.getElementById('overlay-msg').textContent = '';
+    // Try to close the window (works if opened via script)
+    try { window.open('','_self').close(); } catch(e) {}
+    setTimeout(function() {
+      document.getElementById('overlay-msg').innerHTML =
+        '<span style="font-size:13px;color:rgba(255,255,255,0.25);letter-spacing:1px;">Click to restart</span>';
+      os.style.cursor = 'pointer';
+      os.onclick = function() { os.classList.remove('show'); os.onclick=null; os.style.cursor=''; doRestart(); };
+    }, 2000);
+  }, 2500);
+};
+
+window.doRestart = function() {
+  hidePowerMenu(); closeStartMenu(); closeAllPanels();
+  var os = document.getElementById('overlay-screen');
+  document.getElementById('overlay-msg').textContent = 'Restarting...';
+  os.classList.add('show');
+  setTimeout(function() {
+    os.classList.remove('show');
+    var boot = document.getElementById('boot-screen');
+    boot.style.display='flex'; boot.style.opacity='1'; boot.classList.remove('hide');
+    setTimeout(function() {
+      boot.classList.add('hide');
+      setTimeout(function() { boot.style.display='none'; }, 900);
+    }, 3200);
+  }, 1500);
+};
+
+document.addEventListener('click', function(e) {
+  if (powerMenuOpen && !e.target.closest('#power-menu-popup') && !e.target.closest('#start-inner')) hidePowerMenu();
+});
+
+/* ============================================================
+   WINDOW MANAGER
+============================================================ */
+var zCounter = 100;
+var openWindows = {};
+
+function createWindow(id, title, iconUrl, contentHtml, opts) {
+  opts = opts || {};
+  var existing = document.getElementById('win-'+id);
+  if (existing) {
+    if (existing.classList.contains('minimized')) existing.classList.remove('minimized');
+    bringToFront(id); return existing;
+  }
+  var w = opts.w||900, h = opts.h||600;
+  var x = opts.x||(Math.random()*(window.innerWidth-w-60)+30);
+  var y = opts.y||(Math.random()*(window.innerHeight-h-80)+30);
+  var theme = opts.theme||'light';
+  var win = document.createElement('div');
+  win.className='win win-'+theme+' focused';
+  win.id='win-'+id;
+  win.style.cssText='left:'+x+'px;top:'+y+'px;width:'+w+'px;height:'+h+'px;z-index:'+(++zCounter);
+  win.innerHTML=
+    '<div class="win-bar" id="bar-'+id+'">'+
+      '<img class="win-icon" src="'+iconUrl+'" alt=""/>'+
+      '<span class="win-title-text">'+title+'</span>'+
+      '<div class="win-btns">'+
+        '<div class="wbtn min" onclick="minimizeWin(\''+id+'\')" title="Minimize"><svg width="10" height="10" viewBox="0 0 10 1"><rect width="10" height="1" fill="currentColor"/></svg></div>'+
+        '<div class="wbtn max" onclick="toggleMaxWin(\''+id+'\')" title="Maximize"><svg width="10" height="10" viewBox="0 0 10 10"><rect x="0" y="0" width="10" height="10" fill="none" stroke="currentColor" stroke-width="1"/></svg></div>'+
+        '<div class="wbtn cls" onclick="closeWin(\''+id+'\')" title="Close"><svg width="10" height="10" viewBox="0 0 10 10"><line x1="0" y1="0" x2="10" y2="10" stroke="currentColor" stroke-width="1.3"/><line x1="10" y1="0" x2="0" y2="10" stroke="currentColor" stroke-width="1.3"/></svg></div>'+
+      '</div>'+
+    '</div>'+
+    '<div class="win-body" id="body-'+id+'">'+contentHtml+'</div>';
+  document.getElementById('windows-container').appendChild(win);
+  makeDraggable(win, document.getElementById('bar-'+id));
+  win.addEventListener('mousedown', function() { bringToFront(id); });
+  openWindows[id] = {minimized:false, maxed:false, prev:{}};
+  var tbBtn = document.getElementById('tb-'+id);
+  if (tbBtn) tbBtn.classList.add('tb-active');
+  return win;
+}
+window.createWindow = createWindow;
+
+function bringToFront(id) {
+  var win = document.getElementById('win-'+id); if (!win) return;
+  win.style.zIndex = ++zCounter;
+  document.querySelectorAll('.win').forEach(function(w) { w.classList.remove('focused'); });
+  win.classList.add('focused');
+}
+window.bringToFront = bringToFront;
+
+window.closeWin = function(id) {
+  var win = document.getElementById('win-'+id); if (win) win.remove();
+  delete openWindows[id];
+  var tbBtn = document.getElementById('tb-'+id);
+  if (tbBtn) tbBtn.classList.remove('tb-active');
+};
+
+window.minimizeWin = function(id) {
+  var win = document.getElementById('win-'+id);
+  if (win) win.classList.toggle('minimized');
+};
+
+window.toggleMaxWin = function(id) {
+  var win = document.getElementById('win-'+id); if (!win) return;
+  var state = openWindows[id];
+  if (state.maxed) {
+    win.style.left=state.prev.left; win.style.top=state.prev.top;
+    win.style.width=state.prev.width; win.style.height=state.prev.height;
+    state.maxed=false;
+  } else {
+    state.prev={left:win.style.left,top:win.style.top,width:win.style.width,height:win.style.height};
+    win.style.left='0'; win.style.top='0';
+    win.style.width='100vw'; win.style.height='calc(100vh - 48px)';
+    state.maxed=true;
+  }
+};
+
+function makeDraggable(win, bar) {
+  var dragging=false, ox=0, oy=0;
+  bar.addEventListener('mousedown', function(e) {
+    if (e.target.closest('.win-btns')) return;
+    dragging=true; ox=e.clientX-win.offsetLeft; oy=e.clientY-win.offsetTop;
+    bar.style.cursor='grabbing'; e.preventDefault();
+  });
+  document.addEventListener('mousemove', function(e) {
+    if (!dragging) return;
+    var nx=e.clientX-ox, ny=e.clientY-oy;
+    nx=Math.max(0,Math.min(nx,window.innerWidth-win.offsetWidth));
+    ny=Math.max(0,Math.min(ny,window.innerHeight-48-36));
+    win.style.left=nx+'px'; win.style.top=ny+'px';
+  });
+  document.addEventListener('mouseup', function() { dragging=false; bar.style.cursor=''; });
+}
+
+/* ============================================================
+   FILE EXPLORER
+============================================================ */
+var fsTree = {
+  'This PC': {
+    'Desktop':{type:'folder',children:{'Wallpapers':{type:'folder',children:{}},'readme.txt':{type:'file',ext:'txt'}}},
+    'Documents':{type:'folder',children:{'Work':{type:'folder',children:{'report.docx':{type:'file',ext:'docx'},'budget.xlsx':{type:'file',ext:'xlsx'}}},'Personal':{type:'folder',children:{}},'notes.txt':{type:'file',ext:'txt'}}},
+    'Downloads':{type:'folder',children:{'installer.exe':{type:'file',ext:'exe'},'photo.jpg':{type:'file',ext:'jpg'},'archive.zip':{type:'file',ext:'zip'}}},
+    'Pictures':{type:'folder',children:{'Camera Roll':{type:'folder',children:{}},'Screenshots':{type:'folder',children:{}}}},
+    'Music':{type:'folder',children:{'Playlist.m3u':{type:'file',ext:'m3u'}}},
+    'Videos':{type:'folder',children:{}},
+    'C: Local Disk':{type:'folder',children:{'Windows':{type:'folder',children:{}},'Program Files':{type:'folder',children:{'Microsoft':{type:'folder',children:{}},'Spotify':{type:'folder',children:{}},'Roblox':{type:'folder',children:{'RobloxPlayerBeta.exe':{type:'file',ext:'exe'}}}}},'Users':{type:'folder',children:{'User':{type:'folder',children:{'AppData':{type:'folder',children:{}},'Desktop':{type:'folder',children:{}}}}}}}}
+  }
+};
+var extIcons={folder:'https://img.icons8.com/fluency/96/folder-invoices.png',txt:'https://img.icons8.com/fluency/96/txt.png',docx:'https://img.icons8.com/fluency/96/word.png',xlsx:'https://img.icons8.com/fluency/96/excel.png',exe:'https://img.icons8.com/fluency/96/exe.png',jpg:'https://img.icons8.com/fluency/96/image.png',png:'https://img.icons8.com/fluency/96/image.png',zip:'https://img.icons8.com/fluency/96/zip.png',m3u:'https://img.icons8.com/fluency/96/music.png',default:'https://img.icons8.com/fluency/96/document.png'};
+function getIcon(name,type){if(type==='folder')return extIcons.folder;var ext=name.split('.').pop().toLowerCase();return extIcons[ext]||extIcons.default;}
+var explorerPath=['This PC'];
+
+window.openExplorer = function() {
+  createWindow('explorer','File Explorer','https://img.icons8.com/fluency/32/folder-invoices.png',
+    '<div class="fe-wrap"><div class="fe-sidebar" id="fe-sidebar"></div>'+
+    '<div class="fe-main"><div class="fe-toolbar">'+
+    '<button class="fe-tb-btn" onclick="feNav(-1)">←</button>'+
+    '<button class="fe-tb-btn" onclick="feNav(1)">→</button>'+
+    '<button class="fe-tb-btn" onclick="feUp()">↑</button>'+
+    '<input class="fe-addr" id="fe-addr" value="This PC" readonly/>'+
+    '<button class="fe-tb-btn" onclick="feRefresh()">↻</button>'+
+    '</div><div class="fe-files" id="fe-files"></div></div></div>',
+    {w:900,h:560});
+  setTimeout(function(){renderFeSidebar();renderFeFiles();},50);
+};
+
+function renderFeSidebar(){var el=document.getElementById('fe-sidebar');if(!el)return;var items=[{label:'Quick access',icon:'https://img.icons8.com/fluency/32/bookmark-ribbon.png',path:['This PC']},{label:'Desktop',icon:'https://img.icons8.com/fluency/32/monitor.png',path:['This PC','Desktop']},{label:'Documents',icon:'https://img.icons8.com/fluency/32/documents.png',path:['This PC','Documents']},{label:'Downloads',icon:'https://img.icons8.com/fluency/32/download.png',path:['This PC','Downloads']},{label:'Pictures',icon:'https://img.icons8.com/fluency/32/image.png',path:['This PC','Pictures']},{label:'Music',icon:'https://img.icons8.com/fluency/32/music.png',path:['This PC','Music']},{label:'Videos',icon:'https://img.icons8.com/fluency/32/retro-tv.png',path:['This PC','Videos']},{label:'This PC',icon:'https://img.icons8.com/fluency/32/computer.png',path:['This PC']},{label:'C: Local Disk',icon:'https://img.icons8.com/fluency/32/hdd.png',path:['This PC','C: Local Disk']}];el.innerHTML=items.map(function(i){return '<div class="fe-sitem" onclick=\'feGoTo('+JSON.stringify(i.path)+')\'>'+' <img src="'+i.icon+'" onerror="this.src=\'https://img.icons8.com/color/32/folder.png\'"/>'+i.label+'</div>';}).join('');}
+window.feGoTo=function(path){explorerPath=path;renderFeFiles();};
+window.feUp=function(){if(explorerPath.length>1){explorerPath.pop();renderFeFiles();}};
+window.feRefresh=function(){renderFeFiles();};
+window.feNav=function(){};
+
+function renderFeFiles(){
+  var addr=document.getElementById('fe-addr');var filesEl=document.getElementById('fe-files');if(!addr||!filesEl)return;
+  addr.value=explorerPath.join(' > ');
+  var node=fsTree;
+  for(var i=0;i<explorerPath.length;i++){var seg=explorerPath[i];if(node[seg])node=node[seg];else if(node.children&&node.children[seg])node=node.children[seg];}
+  var children=explorerPath.length===1?fsTree['This PC']:(node.children||node);
+  filesEl.innerHTML=Object.entries(children).map(function(entry){var name=entry[0],info=entry[1];var type=info.type||'folder';var icon=getIcon(name,type);var action=type==='folder'?"feOpen('"+name+"')":'openFileAction(\''+name+'\')';return '<div class="fe-file" ondblclick="'+action+'"><img src="'+icon+'" onerror="this.src=\'https://img.icons8.com/color/96/document.png\'"/><span>'+name+'</span></div>';}).join('');
+}
+window.feOpen=function(name){explorerPath.push(name);renderFeFiles();};
+window.openFileAction=function(name){var ext=name.split('.').pop().toLowerCase();if(ext==='txt')openApp('notepad');else showNotif('File Explorer','Opening '+name+'...','https://img.icons8.com/fluency/32/document.png');};
+
+/* ============================================================
+   NOTEPAD
+============================================================ */
+window.openNotepad = function() {
+  var saved = localStorage.getItem('np_content') || '';
+  createWindow('notepad','Notepad','https://img.icons8.com/fluency/32/notepad.png',
+    '<div class="np-wrap">'+
+    '<div class="np-menu">'+
+      '<button class="np-menu-btn" onclick="toggleNpMenu(\'file\')">File</button>'+
+      '<div class="np-dropdown" id="np-file">'+
+        '<div class="np-ditem" onclick="npNew()">New <span style="float:right;color:#888">Ctrl+N</span></div>'+
+        '<div class="np-ditem" onclick="npSave()">Save <span style="float:right;color:#888">Ctrl+S</span></div>'+
+        '<div class="np-ditem" onclick="npSaveAs()">Save As...</div>'+
+        '<div style="height:1px;background:#eee;margin:4px 0;"></div>'+
+        '<div class="np-ditem" onclick="closeWin(\'notepad\')">Exit</div>'+
+      '</div>'+
+      '<button class="np-menu-btn" onclick="toggleNpMenu(\'edit\')">Edit</button>'+
+      '<div class="np-dropdown" id="np-edit">'+
+        '<div class="np-ditem" onclick="npUndo()">Undo</div>'+
+        '<div class="np-ditem" onclick="npSelectAll()">Select All</div>'+
+      '</div>'+
+      '<button class="np-menu-btn" onclick="toggleNpMenu(\'view\')">View</button>'+
+      '<div class="np-dropdown" id="np-view">'+
+        '<div class="np-ditem" onclick="npWordWrap()">Word Wrap</div>'+
+        '<div class="np-ditem" onclick="npZoomIn()">Zoom In</div>'+
+        '<div class="np-ditem" onclick="npZoomOut()">Zoom Out</div>'+
+      '</div>'+
+    '</div>'+
+    '<textarea class="np-textarea" id="np-text" placeholder="Start typing..." spellcheck="true" oninput="npAutoSave()" onkeydown="npKeyDown(event)">'+saved+'</textarea>'+
+    '<div class="np-status" id="np-status">Ln 1, Col 1 &nbsp;|&nbsp; UTF-8 &nbsp;|&nbsp; Windows (CRLF)</div>'+
+    '</div>',
+    {w:700,h:520});
+  setTimeout(function(){var ta=document.getElementById('np-text');if(ta){ta.addEventListener('keyup',updateNpStatus);ta.addEventListener('click',updateNpStatus);}},50);
+};
+
+window.toggleNpMenu=function(id){document.querySelectorAll('.np-dropdown').forEach(function(d){d.classList.toggle('open',d.id==='np-'+id&&!d.classList.contains('open'));});};
+window.npAutoSave=function(){var ta=document.getElementById('np-text');if(ta)localStorage.setItem('np_content',ta.value);};
+window.npSave=function(){npAutoSave();closeNpMenus();showNotif('Notepad','File saved!','https://img.icons8.com/fluency/32/notepad.png');};
+window.npSaveAs=function(){var ta=document.getElementById('np-text');if(!ta)return;var blob=new Blob([ta.value],{type:'text/plain'});var a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download='notes.txt';a.click();closeNpMenus();};
+window.npNew=function(){if(confirm('Save changes?'))npSave();var ta=document.getElementById('np-text');if(ta){ta.value='';localStorage.removeItem('np_content');}closeNpMenus();};
+window.npUndo=function(){document.getElementById('np-text')?.focus();document.execCommand('undo');closeNpMenus();};
+window.npSelectAll=function(){var ta=document.getElementById('np-text');if(ta)ta.select();closeNpMenus();};
+window.npWordWrap=function(){var ta=document.getElementById('np-text');if(ta)ta.style.whiteSpace=ta.style.whiteSpace==='nowrap'?'pre-wrap':'nowrap';closeNpMenus();};
+window.npZoomIn=function(){var ta=document.getElementById('np-text');if(ta)ta.style.fontSize=(parseFloat(getComputedStyle(ta).fontSize)+1)+'px';closeNpMenus();};
+window.npZoomOut=function(){var ta=document.getElementById('np-text');if(ta)ta.style.fontSize=(parseFloat(getComputedStyle(ta).fontSize)-1)+'px';closeNpMenus();};
+function closeNpMenus(){document.querySelectorAll('.np-dropdown').forEach(function(d){d.classList.remove('open');});}
+window.npKeyDown=function(e){if(e.ctrlKey&&e.key==='s'){e.preventDefault();npSave();}if(e.ctrlKey&&e.key==='n'){e.preventDefault();npNew();}};
+function updateNpStatus(){var ta=document.getElementById('np-text'),st=document.getElementById('np-status');if(!ta||!st)return;var lines=ta.value.substr(0,ta.selectionStart).split('\n');st.innerHTML='Ln '+lines.length+', Col '+(lines[lines.length-1].length+1)+'&nbsp;|&nbsp; UTF-8 &nbsp;|&nbsp; Windows (CRLF)';}
+
+/* ============================================================
+   BROWSER
+============================================================ */
+var blockedDomains=['google.com','google.ru','google.co','youtube.com','twitter.com','x.com','facebook.com','instagram.com','tiktok.com','amazon.com','netflix.com','twitch.tv','yandex.com','yandex.ru'];
+function isDomainBlocked(url){return blockedDomains.some(function(d){return url.indexOf(d)!==-1;});}
+var brHistory=['https://www.bing.com'],brHPos=0,brCheckTimer=null;
+
+window.openBrowser=function(){
+  createWindow('browser','Microsoft Edge','https://img.icons8.com/fluency/32/ms-edge-new.png',
+    '<div class="br-wrap">'+
+      '<div class="br-bar">'+
+        '<button class="br-nav-btn" onclick="brNav(-1)">←</button>'+
+        '<button class="br-nav-btn" onclick="brNav(1)">→</button>'+
+        '<button class="br-nav-btn" onclick="brRefresh()">↻</button>'+
+        '<button class="br-nav-btn" onclick="brHome()">⌂</button>'+
+        '<input class="br-url" id="br-url" value="https://www.bing.com" onkeydown="brGo(event)" placeholder="Search or enter URL..."/>'+
+        '<button class="br-nav-btn" style="color:#0067c0;font-size:18px;" onclick="brGo({key:\'Enter\'})">▶</button>'+
+      '</div>'+
+      '<div style="position:relative;flex:1;display:flex;flex-direction:column;">'+
+        '<div id="br-loading" class="br-loading" style="display:none;"><div class="br-loading-spinner"></div><div style="font-size:13px;color:#555;" id="br-loading-txt">Loading...</div></div>'+
+        '<iframe id="br-iframe" class="br-iframe" src="https://www.bing.com" onload="brLoaded()" style="display:block;"></iframe>'+
+        '<div id="br-blocked" class="br-blocked">'+
+          '<img id="br-blocked-icon" src="https://img.icons8.com/fluency/96/ms-edge-new.png" alt=""/>'+
+          '<h3>Can\'t display this page</h3>'+
+          '<p id="br-blocked-msg">This website blocks embedding. Open in a new tab.</p>'+
+          '<div style="display:flex;gap:10px;"><button onclick="brOpenExternal()" style="padding:8px 22px;background:#0067c0;color:#fff;border:none;border-radius:20px;cursor:pointer;font-size:13px;">Open in New Tab ↗</button></div>'+
+        '</div>'+
+      '</div>'+
+    '</div>',
+    {w:1000,h:640});
+  setTimeout(function(){brNavigateTo('https://www.bing.com',false);},100);
+};
+
+function brNavigateTo(url,addHistory){
+  if(!url)return;
+  if(!url.startsWith('http'))url='https://'+url;
+  var urlInput=document.getElementById('br-url');if(urlInput)urlInput.value=url;
+  var iframe=document.getElementById('br-iframe');var blocked=document.getElementById('br-blocked');var loading=document.getElementById('br-loading');
+  if(!iframe)return;
+  if(addHistory!==false){brHistory=brHistory.slice(0,brHPos+1);brHistory.push(url);brHPos=brHistory.length-1;}
+  if(brCheckTimer)clearTimeout(brCheckTimer);
+  if(blocked)blocked.classList.remove('show');
+  if(isDomainBlocked(url)){
+    iframe.style.display='none';if(loading)loading.style.display='none';
+    var msg=document.getElementById('br-blocked-msg');var icon=document.getElementById('br-blocked-icon');
+    if(url.indexOf('google')!==-1){if(msg)msg.textContent='Google blocks embedding. Click below.';if(icon)icon.src='https://www.google.com/favicon.ico';}
+    else if(url.indexOf('youtube')!==-1){if(msg)msg.textContent='YouTube blocks embedding.';if(icon)icon.src='https://www.youtube.com/favicon.ico';}
+    else{if(msg)msg.textContent='This site blocks embedding. Open it in a new tab.';}
+    if(blocked)blocked.classList.add('show');return;
+  }
+  if(loading){loading.style.display='flex';document.getElementById('br-loading-txt').textContent='Loading '+url+'...';}
+  iframe.style.display='block';iframe.src=url;
+  brCheckTimer=setTimeout(function(){var loaded=false;try{var cd=iframe.contentDocument;loaded=!!(cd&&cd.body&&cd.body.innerHTML!=='');}catch(ex){loaded=true;}if(loading)loading.style.display='none';if(!loaded&&blocked){iframe.style.display='none';var m=document.getElementById('br-blocked-msg');if(m)m.textContent='Could not load. Try opening in a new tab.';blocked.classList.add('show');}},5000);
+}
+
+window.brGo=function(e){if(e.key!=='Enter')return;var url=document.getElementById('br-url')?.value.trim();if(!url)return;if(!url.startsWith('http')&&!url.startsWith('//')){if(!url.includes('.')||url.includes(' ')){url='https://www.bing.com/search?q='+encodeURIComponent(url);}else{url='https://'+url;}}brNavigateTo(url,true);};
+window.brNav=function(dir){brHPos=Math.max(0,Math.min(brHistory.length-1,brHPos+dir));brNavigateTo(brHistory[brHPos],false);};
+window.brRefresh=function(){var url=brHistory[brHPos]||'https://www.bing.com';var iframe=document.getElementById('br-iframe');var blocked=document.getElementById('br-blocked');if(blocked)blocked.classList.remove('show');if(iframe){iframe.style.display='block';iframe.src=url;}};
+window.brHome=function(){brNavigateTo('https://www.bing.com',true);};
+window.brLoaded=function(){var loading=document.getElementById('br-loading');if(loading)loading.style.display='none';if(brCheckTimer)clearTimeout(brCheckTimer);};
+window.brOpenExternal=function(){var url=document.getElementById('br-url')?.value;if(url)window.open(url,'_blank');};
+
+/* ============================================================
+   COMMAND PROMPT
+============================================================ */
+var cmdFiles=['notes.txt','budget.xlsx','report.docx','photo.jpg','installer.exe','readme.md','archive.zip'];
+var cmdHistoryArr=[],cmdHistPos=-1,cmdDir='C:\\Users\\User';
+var cmdEnv={PATH:'C:\\Windows\\system32;C:\\Windows',COMPUTERNAME:'DESKTOP-WIN11',USERNAME:'User',OS:'Windows_NT',PROCESSOR_ARCHITECTURE:'AMD64',SystemRoot:'C:\\Windows'};
+
+window.openCmd=function(){
+  createWindow('cmd','Command Prompt','https://img.icons8.com/fluency/32/console.png',
+    '<div class="cmd-wrap"><div class="cmd-out" id="cmd-out">Microsoft Windows [Version 11.0.22631.3737]\n(c) Microsoft Corporation. All rights reserved.\n\n</div>'+
+    '<div class="cmd-line"><span class="cmd-prompt" id="cmd-prompt">'+cmdDir+'&gt;</span>'+
+    '<input class="cmd-input" id="cmd-in" onkeydown="cmdKey(event)" autofocus spellcheck="false"/></div></div>',
+    {w:720,h:460,theme:'dark'});
+  setTimeout(function(){document.getElementById('cmd-in')?.focus();},100);
+};
+
+window.cmdKey=function(e){
+  if(e.key==='Enter'){var input=document.getElementById('cmd-in');if(!input)return;var cmd=input.value.trim();if(cmd){cmdHistoryArr.unshift(cmd);cmdHistPos=-1;}cmdExec(cmd);input.value='';}
+  else if(e.key==='ArrowUp'){cmdHistPos=Math.min(cmdHistPos+1,cmdHistoryArr.length-1);document.getElementById('cmd-in').value=cmdHistoryArr[cmdHistPos]||'';e.preventDefault();}
+  else if(e.key==='ArrowDown'){cmdHistPos=Math.max(cmdHistPos-1,-1);document.getElementById('cmd-in').value=cmdHistPos>=0?cmdHistoryArr[cmdHistPos]:'';e.preventDefault();}
+};
+
+function cmdPrint(text){var out=document.getElementById('cmd-out');if(!out)return;out.innerHTML+=text+'\n';out.scrollTop=out.scrollHeight;}
+function escHtml(s){return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');}
+
+function cmdExec(raw){
+  var out=document.getElementById('cmd-out');if(!out)return;
+  out.innerHTML+='<span style="color:#fff"><span style="color:#aaa">'+escHtml(cmdDir)+'&gt;</span> '+escHtml(raw)+'</span>\n';
+  if(!raw)return;
+  var parts=raw.trim().split(/\s+/),cmd=parts[0].toLowerCase(),arg1=parts[1]||'',args=parts.slice(1).join(' ');
+  var now=new Date();
+  switch(cmd){
+    case 'help':cmdPrint('ASSOC CD CLS COLOR COPY DATE DEL DIR ECHO EXIT FIND FOR HELP\nHOSTNAME IPCONFIG MD MKDIR MOVE NET NETSTAT PATH PING RD\nREN SET SHUTDOWN SYSTEMINFO TASKLIST TASKKILL TIME TITLE TREE\nTYPE VER VOL WHERE WHOAMI XCOPY SFC CHKDSK');break;
+    case 'cls':out.innerHTML='';break;
+    case 'dir':cmdPrint(' Volume in drive C has no label.\n Volume Serial Number is A4B2-9F31\n\n Directory of '+args+''+cmdDir+'\n\n'+cmdFiles.map(function(f){return now.toLocaleDateString('en-US')+'  '+now.toLocaleTimeString('en-US',{hour12:false})+'    '+(Math.floor(Math.random()*999000)+100).toString().padStart(12)+' '+f;}).join('\n')+'\n               '+cmdFiles.length+' File(s)      2,457,600 bytes\n               2 Dir(s)  237,109,248,000 bytes free');break;
+    case 'echo':cmdPrint(args||'ECHO is on.');break;
+    case 'ver':cmdPrint('Microsoft Windows [Version 11.0.22631.3737]');break;
+    case 'date':cmdPrint('The current date is: '+now.toLocaleDateString('en-US',{weekday:'short',month:'2-digit',day:'2-digit',year:'numeric'}));break;
+    case 'time':cmdPrint('The current time is: '+now.toLocaleTimeString('en-US',{hour12:false}));break;
+    case 'whoami':cmdPrint('desktop-win11\\user');break;
+    case 'hostname':cmdPrint('DESKTOP-WIN11');break;
+    case 'ipconfig':cmdPrint('Ethernet adapter Ethernet:\n   IPv4 Address. . . . . . . . . . . . : 192.168.1.100\n   Subnet Mask . . . . . . . . . . . . : 255.255.255.0\n   Default Gateway . . . . . . . . . . : 192.168.1.1');break;
+    case 'ping':if(!arg1){cmdPrint('Usage: ping <hostname>');break;}cmdPrint('Pinging '+arg1+' with 32 bytes of data:\nReply from 142.250.185.14: bytes=32 time=12ms TTL=55\nReply from 142.250.185.14: bytes=32 time=11ms TTL=55\nReply from 142.250.185.14: bytes=32 time=13ms TTL=55\nReply from 142.250.185.14: bytes=32 time=10ms TTL=55\n\nPing statistics for '+arg1+':\n    Packets: Sent = 4, Received = 4, Lost = 0 (0% loss)');break;
+    case 'tasklist':cmdPrint('Image Name          PID   Session  Mem Usage\nsvchost.exe        1116  Services  22,408 K\nexplorer.exe       4288  Console   94,216 K\nchrome.exe         5120  Console  312,564 K\nnotepad.exe        6012  Console    8,832 K\ncmd.exe            6448  Console    4,096 K');break;
+    case 'taskkill':cmdPrint(args.toLowerCase().includes('/f')?'SUCCESS: The process has been terminated.':'ERROR: Use /F to force kill.');break;
+    case 'systeminfo':cmdPrint('Host Name: DESKTOP-WIN11\nOS: Microsoft Windows 11 Pro 22631.3737\nProcessor: Intel Core i7-13700H\nTotal Physical Memory: 16,384 MB\nSystem Model: Dell XPS 15 9530');break;
+    case 'set':if(!args){Object.entries(cmdEnv).forEach(function(e){cmdPrint(e[0]+'='+e[1]);});}else if(args.includes('=')){var kv=args.split('=');cmdEnv[kv[0]]=kv.slice(1).join('=');}else{var val=cmdEnv[args.toUpperCase()];cmdPrint(val?args.toUpperCase()+'='+val:"Environment variable '"+args+"' not defined");}break;
+    case 'path':cmdPrint(cmdEnv.PATH);break;
+    case 'tree':cmdPrint('C:\\\n├───Windows\n├───Program Files\n│   ├───Microsoft\n│   ├───Spotify\n│   └───Roblox\n└───Users\n    └───User\n        ├───Desktop\n        ├───Documents\n        ├───Downloads\n        └───AppData');break;
+    case 'vol':cmdPrint(' Volume in drive C has no label.\n Volume Serial Number is A4B2-9F31');break;
+    case 'cd':if(!args||args==='.'){cmdPrint(cmdDir);break;}if(args==='..'){{var ps=cmdDir.split('\\');if(ps.length>1){ps.pop();cmdDir=ps.join('\\')||'C:';}}};else if(args==='\\'){cmdDir='C:';}else{cmdDir=cmdDir+'\\'+args;}var prompt=document.getElementById('cmd-prompt');if(prompt)prompt.textContent=cmdDir+'>';break;
+    case 'type':if(!args){cmdPrint('The syntax of the command is incorrect.');break;}if(args.endsWith('.txt'))cmdPrint(localStorage.getItem('np_content')||'(empty file)');else cmdPrint('Access is denied.');break;
+    case 'shutdown':if(args.includes('/s')){cmdPrint('');closeWin('cmd');setTimeout(doShutdown,500);}else if(args.includes('/r')){cmdPrint('');closeWin('cmd');setTimeout(doRestart,500);}else{cmdPrint('Usage:\n  shutdown /s   Shut down\n  shutdown /r   Restart');}break;
+    case 'color':var co2=document.getElementById('cmd-out');if(arg1==='0a')co2&&(co2.style.color='#00ff00');else if(arg1==='0c')co2&&(co2.style.color='#ff4444');else if(arg1==='09')co2&&(co2.style.color='#4af');else co2&&(co2.style.color='#cccccc');break;
+    case 'exit':closeWin('cmd');break;
+    case 'net':if(arg1==='user')cmdPrint('User accounts:\nAdministrator  Guest  User');else cmdPrint('NET [ ACCOUNTS | COMPUTER | CONFIG | FILE | GROUP | HELP | USER ]');break;
+    case 'sfc':cmdPrint(arg1==='/scannow'?'Verification 100% complete.\nWindows Resource Protection did not find any integrity violations.':'Usage: sfc /scannow');break;
+    case 'chkdsk':cmdPrint('Windows has scanned the file system and found no problems.\n953867775 KB total disk space.\n890457600 KB available on disk.');break;
+    default:cmdPrint("'"+escHtml(cmd)+"' is not recognized as an internal or external command.");
+  }
+}
+
+/* ============================================================
+   PAINT
+============================================================ */
+var ptTool='pen',ptColor='#000000',ptSize=4,ptDrawing=false,ptLast=null;
+
+window.openPaint=function(){
+  var colors=['#000000','#ffffff','#c00000','#ff0000','#ffc000','#ffff00','#92d050','#00b050','#00b0f0','#0070c0','#7030a0','#ff66cc','#996633','#808080','#c0c0c0'];
+  createWindow('paint','Paint','https://img.icons8.com/fluency/32/paint-palette.png',
+    '<div class="pt-wrap"><div class="pt-toolbar">'+
+      '<button class="pt-tool-btn active" onclick="ptSetTool(\'pen\',this)">✎ Pencil</button>'+
+      '<button class="pt-tool-btn" onclick="ptSetTool(\'brush\',this)">🖌 Brush</button>'+
+      '<button class="pt-tool-btn" onclick="ptSetTool(\'eraser\',this)">▭ Eraser</button>'+
+      '<button class="pt-tool-btn" onclick="ptSetTool(\'fill\',this)">🪣 Fill</button>'+
+      '<button class="pt-tool-btn" onclick="ptSetTool(\'line\',this)">╲ Line</button>'+
+      '<button class="pt-tool-btn" onclick="ptSetTool(\'rect\',this)">▭ Rect</button>'+
+      '<button class="pt-tool-btn" onclick="ptSetTool(\'circle\',this)">◯ Circle</button>'+
+      '<label style="font-size:12px;">Size:</label>'+
+      '<input type="range" class="pt-size" min="1" max="40" value="4" oninput="ptSize=+this.value;document.getElementById(\'pt-sz\').textContent=this.value+\'px\'"/>'+
+      '<span id="pt-sz" style="font-size:12px;">4px</span>'+
+      '<div class="pt-colors">'+colors.map(function(c){return '<div class="pt-color'+(c==='#000000'?' selected':'')+'" style="background:'+c+';" onclick="ptSetColor(\''+c+'\',this)"></div>';}).join('')+'</div>'+
+      '<input type="color" style="width:24px;height:24px;border:none;cursor:pointer;" onchange="ptSetColor(this.value,null)"/>'+
+      '<button class="pt-tool-btn" onclick="ptClear()">🗑 Clear</button>'+
+      '<button class="pt-tool-btn" onclick="ptSave()">💾 Save PNG</button>'+
+    '</div><div class="pt-canvas-wrap"><canvas id="paint-canvas" width="1200" height="700" style="background:#fff;"></canvas></div></div>',
+    {w:920,h:600});
+  setTimeout(initPaintCanvas,60);
+};
+
+function initPaintCanvas(){
+  var canvas=document.getElementById('paint-canvas');if(!canvas)return;
+  var ctx=canvas.getContext('2d');
+  var startX,startY,snapshot;
+  canvas.addEventListener('mousedown',function(e){
+    ptDrawing=true;var r=canvas.getBoundingClientRect();
+    startX=(e.clientX-r.left)*(canvas.width/r.width);startY=(e.clientY-r.top)*(canvas.height/r.height);
+    ptLast={x:startX,y:startY};
+    if(ptTool==='fill'){ptFill(ctx,Math.round(startX),Math.round(startY),ptColor);ptDrawing=false;return;}
+    snapshot=ctx.getImageData(0,0,canvas.width,canvas.height);
+  });
+  canvas.addEventListener('mousemove',function(e){
+    if(!ptDrawing)return;var r=canvas.getBoundingClientRect();
+    var x=(e.clientX-r.left)*(canvas.width/r.width),y=(e.clientY-r.top)*(canvas.height/r.height);
+    ctx.strokeStyle=ptTool==='eraser'?'#fff':ptColor;ctx.fillStyle=ptColor;
+    ctx.lineWidth=ptTool==='brush'?ptSize*3:ptTool==='eraser'?ptSize*4:ptSize;
+    ctx.lineCap='round';ctx.lineJoin='round';
+    if(['pen','brush','eraser'].includes(ptTool)){ctx.beginPath();ctx.moveTo(ptLast.x,ptLast.y);ctx.lineTo(x,y);ctx.stroke();ptLast={x:x,y:y};}
+    else if(ptTool==='line'){ctx.putImageData(snapshot,0,0);ctx.beginPath();ctx.moveTo(startX,startY);ctx.lineTo(x,y);ctx.stroke();}
+    else if(ptTool==='rect'){ctx.putImageData(snapshot,0,0);ctx.strokeRect(startX,startY,x-startX,y-startY);}
+    else if(ptTool==='circle'){ctx.putImageData(snapshot,0,0);ctx.beginPath();ctx.ellipse(startX+(x-startX)/2,startY+(y-startY)/2,Math.abs(x-startX)/2,Math.abs(y-startY)/2,0,0,2*Math.PI);ctx.stroke();}
+  });
+  canvas.addEventListener('mouseup',function(){ptDrawing=false;ptLast=null;});
+  canvas.addEventListener('mouseleave',function(){ptDrawing=false;});
+}
+
+window.ptSetTool=function(tool,btn){ptTool=tool;document.querySelectorAll('.pt-tool-btn').forEach(function(b){b.classList.remove('active');});if(btn)btn.classList.add('active');};
+window.ptSetColor=function(color,el){ptColor=color;document.querySelectorAll('.pt-color').forEach(function(c){c.classList.remove('selected');});if(el)el.classList.add('selected');};
+function ptFill(ctx,x,y,fillColor){var imgData=ctx.getImageData(0,0,ctx.canvas.width,ctx.canvas.height);var data=imgData.data;var ti=(y*ctx.canvas.width+x)*4;var tr=data[ti],tg=data[ti+1],tb=data[ti+2];var fc=parseInt(fillColor.slice(1),16);var fr=(fc>>16)&0xff,fg=(fc>>8)&0xff,fb=fc&0xff;if(tr===fr&&tg===fg&&tb===fb)return;var stack=[[x,y]],w=ctx.canvas.width,h=ctx.canvas.height;while(stack.length){var p=stack.pop(),cx=p[0],cy=p[1];if(cx<0||cx>=w||cy<0||cy>=h)continue;var idx=(cy*w+cx)*4;if(data[idx]!==tr||data[idx+1]!==tg||data[idx+2]!==tb)continue;data[idx]=fr;data[idx+1]=fg;data[idx+2]=fb;data[idx+3]=255;stack.push([cx+1,cy],[cx-1,cy],[cx,cy+1],[cx,cy-1]);}ctx.putImageData(imgData,0,0);}
+window.ptClear=function(){var c=document.getElementById('paint-canvas');if(c){var ctx=c.getContext('2d');ctx.clearRect(0,0,c.width,c.height);ctx.fillStyle='#fff';ctx.fillRect(0,0,c.width,c.height);}};
+window.ptSave=function(){var c=document.getElementById('paint-canvas');if(!c)return;var a=document.createElement('a');a.href=c.toDataURL('image/png');a.download='drawing.png';a.click();};
+
+/* ============================================================
+   MICROSOFT STORE
+============================================================ */
+var storeApps=[{name:'Spotify',cat:'Music',rating:'4.5',icon:'https://img.icons8.com/fluency/96/spotify.png',bg:'#1DB954'},{name:'Netflix',cat:'Entertainment',rating:'4.2',icon:'https://img.icons8.com/fluency/96/netflix.png',bg:'#E50914'},{name:'Discord',cat:'Social',rating:'4.7',icon:'https://img.icons8.com/fluency/96/discord.png',bg:'#5865F2'},{name:'VLC',cat:'Media',rating:'4.8',icon:'https://img.icons8.com/fluency/96/vlc.png',bg:'#FF8800'},{name:'WhatsApp',cat:'Messaging',rating:'4.3',icon:'https://img.icons8.com/fluency/96/whatsapp.png',bg:'#25D366'},{name:'Zoom',cat:'Productivity',rating:'4.0',icon:'https://img.icons8.com/fluency/96/zoom.png',bg:'#2D8CFF'},{name:'Adobe Reader',cat:'Productivity',rating:'4.4',icon:'https://img.icons8.com/fluency/96/adobe-acrobat.png',bg:'#DC143C'},{name:'7-Zip',cat:'Utilities',rating:'4.9',icon:'https://img.icons8.com/fluency/96/zip.png',bg:'#666'}];
+
+window.openStore=function(){
+  createWindow('store','Microsoft Store','https://img.icons8.com/fluency/32/microsoft-store.png',
+    '<div class="ms-wrap"><div class="ms-sidebar"><div style="padding:8px;margin-bottom:8px;"><input style="width:100%;background:#fff;border:1px solid rgba(0,0,0,.2);border-radius:16px;padding:6px 12px;font-size:12px;outline:none;" placeholder="🔍 Search apps..."/></div>'+['Home','Apps','Games','Movies & TV'].map(function(t,i){return '<div class="ms-sitem'+(i===0?' ms-active':'')+'">'+t+'</div>';}).join('')+'</div>'+
+    '<div class="ms-main"><div class="ms-hero"><div style="position:relative;z-index:1;"><div style="font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:1px;opacity:.8;margin-bottom:6px;">FEATURED</div><div style="font-size:26px;font-weight:700;margin-bottom:6px;">Microsoft 365</div><div style="font-size:13px;opacity:.8;margin-bottom:12px;">The complete productivity suite</div><button style="background:#fff;color:#0067c0;border:none;padding:8px 20px;border-radius:16px;cursor:pointer;font-size:13px;">Get</button></div></div>'+
+    '<div style="font-size:16px;font-weight:600;color:#111;margin-bottom:12px;">Top free apps</div>'+
+    '<div class="ms-apps-grid">'+storeApps.map(function(a){return '<div class="ms-app-card" onclick="showNotif(\'Microsoft Store\',\'Installing '+a.name+'...\',\'https://img.icons8.com/fluency/32/microsoft-store.png\')"><div class="ms-card-img" style="background:linear-gradient(135deg,'+a.bg+'22,'+a.bg+'44)"><img src="'+a.icon+'" style="width:56px;height:56px;" onerror="this.style.display=\'none\'"/></div><div class="ms-card-info"><h4>'+a.name+'</h4><div class="ms-stars">'+'★'.repeat(Math.floor(+a.rating))+'☆'.repeat(5-Math.floor(+a.rating))+'</div><span>'+a.cat+'</span></div></div>';}).join('')+'</div></div></div>',
+    {w:920,h:600});
+};
+
+/* ============================================================
+   SPOTIFY
+============================================================ */
+var spAlbums=[{title:'Blinding Lights',artist:'The Weeknd',color:'#8B0000'},{title:'Future Nostalgia',artist:'Dua Lipa',color:'#8B008B'},{title:'Midnights',artist:'Taylor Swift',color:'#00008B'},{title:'Un Verano Sin Ti',artist:'Bad Bunny',color:'#006400'},{title:'Renaissance',artist:'Beyoncé',color:'#8B6914'},{title:"Harry's House",artist:'Harry Styles',color:'#2E8B57'}];
+var spPlaying=false,spCurrentTrack={title:'Blinding Lights',artist:'The Weeknd'},spTrackIdx=0;
+
+window.openSpotify=function(){
+  createWindow('spotify','Spotify','https://img.icons8.com/fluency/32/spotify.png',
+    '<div class="sp-wrap"><div class="sp-top"><div class="sp-sidebar">'+
+    '<div class="sp-logo"><svg height="28" viewBox="0 0 167.1 167.1" fill="#1DB954"><path d="M83.55 0C37.37 0 0 37.37 0 83.55s37.37 83.55 83.55 83.55 83.55-37.37 83.55-83.55S129.73 0 83.55 0zm38.38 120.46c-1.5 2.46-4.72 3.23-7.18 1.73-19.66-12.02-44.41-14.74-73.53-8.08-2.8.64-5.6-1.1-6.25-3.9-.64-2.8 1.1-5.6 3.9-6.25 31.92-7.3 59.3-4.16 81.44 9.34 2.46 1.5 3.24 4.7 1.62 7.16zm10.24-22.8c-1.89 3.07-5.9 4.03-8.97 2.15-22.51-13.84-56.82-17.85-83.47-9.77-3.45 1.04-7.1-.9-8.15-4.35-1.04-3.45.9-7.1 4.35-8.15 30.44-9.24 68.24-4.77 94.1 11.15 3.06 1.89 4.03 5.9 2.14 8.97zm.88-23.73C107.8 55.7 63.73 54.25 37.04 62.19c-4.14 1.26-8.52-1.07-9.78-5.21-1.26-4.14 1.07-8.52 5.21-9.78 30.77-9.35 81.93-7.54 114.28 12.03 3.73 2.22 4.96 7.02 2.74 10.75-2.2 3.73-7.02 4.97-10.74 2.75z"/></svg><span style="font-size:16px;font-weight:700;color:#fff;">Spotify</span></div>'+
+    '<div class="sp-nav-item sp-active">🏠 Home</div><div class="sp-nav-item">🔍 Search</div><div class="sp-nav-item">📚 Library</div>'+
+    '<div style="height:1px;background:rgba(255,255,255,.08);margin:12px 0;"></div>'+
+    ['Liked Songs','Chill Vibes','Workout Mix','Late Night Drive'].map(function(p){return '<div class="sp-nav-item" style="font-size:12.5px;">'+p+'</div>';}).join('')+'</div>'+
+    '<div class="sp-main"><div class="sp-section-title">Good afternoon</div>'+
+    '<div class="sp-grid">'+spAlbums.map(function(a,i){return '<div class="sp-card" onclick="spPlay('+i+')"><div class="sp-card-img" style="background:linear-gradient(135deg,'+a.color+',#111);display:flex;align-items:center;justify-content:center;"><svg width="40" height="40" viewBox="0 0 24 24" fill="rgba(255,255,255,.3)"><path d="M12 3v10.55c-.59-.34-1.27-.55-2-.55-2.21 0-4 1.79-4 4s1.79 4 4 4 4-1.79 4-4V7h4V3h-6z"/></svg></div><h4>'+a.title+'</h4><p>'+a.artist+'</p></div>';}).join('')+'</div></div></div>'+
+    '<div class="sp-player"><div class="sp-player-left"><div class="sp-thumb"></div><div><div style="font-size:13px;font-weight:500;" id="sp-title">'+spCurrentTrack.title+'</div><div style="font-size:11px;color:#b3b3b3;" id="sp-artist">'+spCurrentTrack.artist+'</div></div></div>'+
+    '<div class="sp-player-center"><div class="sp-controls">'+
+    '<button class="sp-ctrl-btn" onclick="spPrev()"><svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor"><path d="M6 6h2v12H6zm3.5 6l8.5 6V6z"/></svg></button>'+
+    '<button class="sp-ctrl-btn sp-play-btn" id="sp-play-btn" onclick="spToggle()"><svg id="sp-play-icon" width="18" height="18" viewBox="0 0 24 24" fill="currentColor"><path d="M8 5v14l11-7z"/></svg></button>'+
+    '<button class="sp-ctrl-btn" onclick="spNext()"><svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor"><path d="M6 18l8.5-6L6 6v12zM16 6v12h2V6h-2z"/></svg></button>'+
+    '</div><div style="display:flex;align-items:center;gap:8px;width:100%;"><span style="font-size:11px;color:#b3b3b3;" id="sp-cur">1:24</span><div class="sp-progress"><div class="sp-progress-fill" id="sp-prog"></div></div><span style="font-size:11px;color:#b3b3b3;">3:45</span></div></div>'+
+    '<div class="sp-vol"><svg width="16" height="16" viewBox="0 0 24 24" fill="#b3b3b3"><path d="M3 9v6h4l5 5V4L7 9H3zm13.5 3c0-1.8-1-3.3-2.5-4v8c1.5-.7 2.5-2.2 2.5-4z"/></svg><input type="range" style="flex:1;accent-color:#1DB954;" value="70" min="0" max="100"/></div></div></div>',
+    {w:920,h:600,theme:'dark'});
+};
+
+window.spPlay=function(idx){spTrackIdx=idx;spCurrentTrack=spAlbums[idx];var t=document.getElementById('sp-title'),a=document.getElementById('sp-artist');if(t)t.textContent=spCurrentTrack.title;if(a)a.textContent=spCurrentTrack.artist;spPlaying=true;updateSpPlayBtn();spShowToast('Now playing: '+spCurrentTrack.title);};
+window.spToggle=function(){spPlaying=!spPlaying;updateSpPlayBtn();};
+window.spPrev=function(){spTrackIdx=(spTrackIdx-1+spAlbums.length)%spAlbums.length;spPlay(spTrackIdx);};
+window.spNext=function(){spTrackIdx=(spTrackIdx+1)%spAlbums.length;spPlay(spTrackIdx);};
+function updateSpPlayBtn(){var icon=document.getElementById('sp-play-icon');if(!icon)return;icon.innerHTML=spPlaying?'<path d="M6 19h4V5H6v14zm8-14v14h4V5h-4z"/>':'<path d="M8 5v14l11-7z"/>';}
+var spProgVal=35;
+setInterval(function(){if(!spPlaying)return;spProgVal=(spProgVal+.1)%100;var p=document.getElementById('sp-prog');if(p)p.style.width=spProgVal+'%';var cur=document.getElementById('sp-cur');if(cur){var secs=Math.floor(spProgVal*225/100);cur.textContent=Math.floor(secs/60)+':'+(secs%60).toString().padStart(2,'0');}},500);
+function spShowToast(msg){var t=document.createElement('div');t.className='sp-toast';t.textContent=msg;document.body.appendChild(t);setTimeout(function(){t.remove();},2500);}
+
+/* ============================================================
+   RECYCLE BIN
+============================================================ */
+var recycleItems=JSON.parse(localStorage.getItem('recycle_items')||'null')||[{name:'old_project.zip',type:'ZIP File',size:'14.2 MB',deleted:'5/10/2026 9:34 AM',orig:'C:\\Users\\User\\Downloads'},{name:'draft.docx',type:'Word Document',size:'42 KB',deleted:'5/9/2026 3:12 PM',orig:'C:\\Users\\User\\Documents'},{name:'screenshot.png',type:'PNG Image',size:'1.8 MB',deleted:'5/8/2026 7:45 PM',orig:'C:\\Users\\User\\Desktop'}];
+var rbSelected=new Set();
+
+window.openRecycle=function(){
+  createWindow('recycle','Recycle Bin','https://img.icons8.com/fluency/32/full-trash.png',
+    '<div class="rb-wrap"><div class="rb-toolbar"><button class="rb-tool-btn" onclick="rbEmpty()">🗑 Empty Recycle Bin</button><button class="rb-tool-btn" onclick="rbRestore()">↩ Restore selected</button><div style="flex:1;"></div><span style="font-size:12px;color:#666;" id="rb-count"></span></div>'+
+    '<div class="rb-header"><span>Name</span><span>Original Location</span><span>Date Deleted</span><span>Size</span></div>'+
+    '<div class="rb-content" id="rb-content"></div></div>',
+    {w:780,h:500});
+  setTimeout(renderRecycle,50);
+};
+
+function renderRecycle(){var el=document.getElementById('rb-content'),cnt=document.getElementById('rb-count');if(!el)return;if(cnt)cnt.textContent=recycleItems.length+' item(s)';if(!recycleItems.length){el.innerHTML='<div class="rb-empty"><img src="https://img.icons8.com/fluency/96/empty-trash.png" style="width:80px;opacity:.5;"/><p>Recycle Bin is empty</p></div>';return;}var iconMap={'ZIP File':'zip','Word Document':'word','PNG Image':'image','Application':'exe'};el.innerHTML=recycleItems.map(function(item,i){return '<div class="rb-row'+(rbSelected.has(i)?' rb-selected':'')+'" onclick="rbSelect('+i+',event)"><span style="display:flex;align-items:center;gap:6px;"><img src="https://img.icons8.com/fluency/32/'+(iconMap[item.type]||'document')+'.png" style="width:16px;"/>'+item.name+'</span><span style="font-size:12px;color:#555;">'+item.orig+'</span><span style="font-size:12px;color:#555;">'+item.deleted+'</span><span style="font-size:12px;color:#555;">'+item.size+'</span></div>';}).join('');}
+window.rbSelect=function(i,e){if(!e.ctrlKey)rbSelected.clear();rbSelected.has(i)?rbSelected.delete(i):rbSelected.add(i);renderRecycle();};
+window.rbEmpty=function(){if(confirm('Permanently delete all items?')){recycleItems=[];localStorage.setItem('recycle_items',JSON.stringify(recycleItems));rbSelected.clear();renderRecycle();showNotif('Recycle Bin','Recycle Bin emptied.','https://img.icons8.com/fluency/32/empty-trash.png');}};
+window.rbRestore=function(){if(!rbSelected.size){showNotif('Recycle Bin','Select items to restore.','https://img.icons8.com/fluency/32/full-trash.png');return;}var names=[...rbSelected].map(function(i){return recycleItems[i].name;});recycleItems=recycleItems.filter(function(_,i){return !rbSelected.has(i);});localStorage.setItem('recycle_items',JSON.stringify(recycleItems));rbSelected.clear();renderRecycle();showNotif('Recycle Bin','Restored: '+names.join(', '),'https://img.icons8.com/fluency/32/restore.png');};
+
+/* ============================================================
+   ROBLOX / MINECRAFT
+============================================================ */
+window.openRoblox=function(){
+  var gl=document.getElementById('game-launch-screen');
+  document.getElementById('gl-img').src='https://img.icons8.com/color/96/roblox.png';
+  document.getElementById('gl-title').textContent='Roblox';
+  document.getElementById('gl-sub').textContent='Launching RobloxPlayerBeta.exe...';
+  gl.style.background='linear-gradient(135deg,#0f0f0f,#1a1a2e)';
+  gl.classList.add('show');
+  try{window.location.href='roblox://experiences/start';}catch(e){}
+  setTimeout(function(){gl.classList.remove('show');showNotif('Roblox','Launching Roblox...','https://img.icons8.com/color/32/roblox.png');},3000);
+};
+
+window.openMinecraft=function(){
+  var gl=document.getElementById('game-launch-screen');
+  document.getElementById('gl-img').src='https://img.icons8.com/color/96/minecraft-logo.png';
+  document.getElementById('gl-title').textContent='Minecraft';
+  document.getElementById('gl-sub').textContent='Launching via TLauncher...';
+  gl.style.background='linear-gradient(135deg,#1a1a0a,#2d4a1e)';
+  gl.classList.add('show');
+  try{window.location.href='minecraft://';}catch(e){}
+  setTimeout(function(){gl.classList.remove('show');showNotif('Minecraft','Launching Minecraft...','https://img.icons8.com/color/32/minecraft-logo.png');},3000);
+};
+
+/* ============================================================
+   START MENU
+============================================================ */
+var startOpen=false;
+window.toggleStartMenu=function(){
+  startOpen=!startOpen;
+  document.getElementById('start-menu').classList.toggle('open',startOpen);
+  document.getElementById('start-btn').classList.toggle('tb-active',startOpen);
+  if(startOpen)setTimeout(function(){document.getElementById('start-search')?.focus();},200);
+};
+window.closeStartMenu=function(){
+  startOpen=false;
+  document.getElementById('start-menu').classList.remove('open');
+  document.getElementById('start-btn').classList.remove('tb-active');
+};
+window.focusStartSearch=function(){if(!startOpen)toggleStartMenu();setTimeout(function(){document.getElementById('start-search')?.focus();},250);};
+window.filterApps=function(q){var grid=document.getElementById('pinned-grid');if(!grid)return;grid.querySelectorAll('.pin-app').forEach(function(el){var name=el.querySelector('span')?.textContent.toLowerCase()||'';el.style.display=q&&!name.includes(q.toLowerCase())?'none':'';});};
+
+/* ============================================================
+   CLOCK & CALENDAR
+============================================================ */
+function updateClock(){
+  var now=new Date();
+  var t=document.getElementById('clock-time'),d=document.getElementById('clock-date');
+  if(t)t.textContent=now.toLocaleTimeString('en-US',{hour:'2-digit',minute:'2-digit',hour12:true});
+  if(d)d.textContent=now.toLocaleDateString('en-US',{month:'2-digit',day:'2-digit',year:'numeric'});
+}
+updateClock();setInterval(updateClock,1000);
+
+window.toggleCalendar=function(){
+  var panel=document.getElementById('cal-panel');
+  var isOpen=panel.classList.contains('open');
+  if(!isOpen)renderCalendar();
+  panel.classList.toggle('open');
+};
+
+function renderCalendar(){
+  var now=new Date(),year=now.getFullYear(),month=now.getMonth();
+  var months=['January','February','March','April','May','June','July','August','September','October','November','December'];
+  var firstDay=new Date(year,month,1).getDay();var daysInMonth=new Date(year,month+1,0).getDate();
+  var cells='';for(var i=0;i<firstDay;i++)cells+='<td></td>';
+  for(var day=1;day<=daysInMonth;day++){var isToday=day===now.getDate();cells+='<td style="text-align:center;padding:5px 3px;border-radius:50%;cursor:pointer;'+(isToday?'background:#0067c0;color:#fff;font-weight:600;':'')+'" onmouseenter="if(!'+isToday+')this.style.background=\'rgba(255,255,255,.12)\'" onmouseleave="if(!'+isToday+')this.style.background=\'\'">'+day+'</td>';if((firstDay+day)%7===0&&day<daysInMonth)cells+='</tr><tr>';}
+  document.getElementById('cal-content').innerHTML=
+    '<div style="display:flex;justify-content:space-between;margin-bottom:12px;"><span style="font-size:15px;font-weight:600;">'+months[month]+' '+year+'</span></div>'+
+    '<table style="width:100%;font-size:12px;color:rgba(255,255,255,.8);border-collapse:separate;border-spacing:2px;"><tr>'+['Su','Mo','Tu','We','Th','Fr','Sa'].map(function(d){return '<th style="text-align:center;padding:4px;color:rgba(255,255,255,.5);font-weight:400;">'+d+'</th>';}).join('')+'</tr><tr>'+cells+'</tr></table>'+
+    '<div style="margin-top:16px;padding-top:12px;border-top:1px solid rgba(255,255,255,.1);font-size:12px;color:rgba(255,255,255,.4);text-align:center;">No events today</div>';
+}
+
+/* ============================================================
+   NOTIFICATIONS
+============================================================ */
+window.showNotif=function(title,message,icon){
+  var area=document.getElementById('notif-area');
+  var notif=document.createElement('div');notif.className='notif';
+  notif.innerHTML='<img src="'+(icon||'https://img.icons8.com/fluency/32/info.png')+'" onerror="this.style.display=\'none\'" alt=""/>'+
+    '<div><div style="font-weight:600;font-size:12.5px;margin-bottom:2px;">'+title+'</div>'+
+    '<div style="font-size:12px;color:rgba(255,255,255,.7);">'+message+'</div></div>';
+  notif.onclick=function(){notif.remove();};
+  area.appendChild(notif);
+  setTimeout(function(){notif.style.opacity='0';},3500);
+  setTimeout(function(){notif.remove();},4000);
+};
+
+/* ============================================================
+   CONTEXT MENU
+============================================================ */
+document.getElementById('desktop').addEventListener('contextmenu',function(e){
+  if(e.target.closest('.win')||e.target.closest('#taskbar')||e.target.closest('#start-menu')||e.target.closest('.dw'))return;
+  e.preventDefault();
+  var menu=document.getElementById('ctx-menu');
+  menu.style.left=Math.min(e.clientX,window.innerWidth-240)+'px';
+  menu.style.top=Math.min(e.clientY,window.innerHeight-260)+'px';
+  menu.classList.add('open');
+});
+window.closeCtxMenu=function(){document.getElementById('ctx-menu').classList.remove('open');};
+
+document.addEventListener('click',function(e){
+  if(!e.target.closest('#ctx-menu'))closeCtxMenu();
+  if(!e.target.closest('#start-menu')&&!e.target.closest('#start-btn')&&startOpen)closeStartMenu();
+  if(!e.target.closest('#cal-panel')&&!e.target.closest('.tray-btn'))document.getElementById('cal-panel').classList.remove('open');
+  if(!e.target.closest('.np-menu'))closeNpMenus();
+  if(!e.target.closest('#power-menu-popup')&&!e.target.closest('#start-inner')&&powerMenuOpen)hidePowerMenu();
+  if(!e.target.closest('#wallpaper-panel')&&!e.target.closest('#cursor-panel')&&!e.target.closest('#widget-panel')){
+    // only close if click is not on panels themselves  
+  }
+});
+
+document.addEventListener('keydown',function(e){
+  if(e.key==='Escape'){closeCtxMenu();closeStartMenu();closeAllPanels();document.getElementById('cal-panel').classList.remove('open');}
+  if(e.ctrlKey&&e.key==='s'&&document.getElementById('np-text')){e.preventDefault();window.npSave&&npSave();}
+});
+
+/* ============================================================
+   APP LAUNCHER
+============================================================ */
+window.openApp=function(id){
+  switch(id){
+    case 'explorer':window.openExplorer();break;
+    case 'notepad':window.openNotepad();break;
+    case 'browser':window.openBrowser();break;
+    case 'cmd':window.openCmd();break;
+    case 'paint':window.openPaint();break;
+    case 'store':window.openStore();break;
+    case 'spotify':window.openSpotify();break;
+    case 'recycle':window.openRecycle();break;
+    case 'roblox':window.openRoblox();break;
+    case 'minecraft':window.openMinecraft();break;
+  }
+};
+
+})();
+</script>
+</body>
+</html>
